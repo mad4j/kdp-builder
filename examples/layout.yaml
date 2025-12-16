@@ -1,0 +1,11 @@
+# Document layout settings
+layout:
+  # Page dimensions in inches
+  page_width: 6.0
+  page_height: 9.0
+  
+  # Margins in inches
+  margin_top: 0.75
+  margin_bottom: 0.75
+  margin_left: 0.75
+  margin_right: 0.75

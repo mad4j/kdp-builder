@@ -1,0 +1,103 @@
+# Style definitions for the document
+styles:
+  normal:
+    font_name: "Arial"
+    font_size: 11
+    bold: false
+    italic: false
+    underline: false
+    alignment: "left"
+    space_before: 0
+    space_after: 6
+  
+  heading1:
+    font_name: "Arial"
+    font_size: 24
+    bold: true
+    italic: false
+    underline: false
+    alignment: "left"
+    space_before: 12
+    space_after: 12
+  
+  heading2:
+    font_name: "Arial"
+    font_size: 18
+    bold: true
+    italic: false
+    underline: false
+    alignment: "left"
+    space_before: 10
+    space_after: 10
+  
+  heading3:
+    font_name: "Arial"
+    font_size: 14
+    bold: true
+    italic: false
+    underline: false
+    alignment: "left"
+    space_before: 8
+    space_after: 8
+  
+  title:
+    font_name: "Times New Roman"
+    font_size: 28
+    bold: true
+    italic: false
+    underline: false
+    alignment: "center"
+    space_before: 0
+    space_after: 24
+  
+  subtitle:
+    font_name: "Times New Roman"
+    font_size: 16
+    bold: false
+    italic: true
+    underline: false
+    alignment: "center"
+    space_before: 0
+    space_after: 12
+  
+  emphasis:
+    font_name: "Arial"
+    font_size: 11
+    bold: false
+    italic: true
+    underline: false
+    alignment: "left"
+    space_before: 0
+    space_after: 6
+  
+  strong:
+    font_name: "Arial"
+    font_size: 11
+    bold: true
+    italic: false
+    underline: false
+    alignment: "left"
+    space_before: 0
+    space_after: 6
+  
+  highlight:
+    font_name: "Arial"
+    font_size: 11
+    bold: true
+    italic: false
+    underline: false
+    color: "#FF0000"
+    alignment: "left"
+    space_before: 0
+    space_after: 6
+  
+  quote:
+    font_name: "Georgia"
+    font_size: 10
+    bold: false
+    italic: true
+    underline: false
+    color: "#666666"
+    alignment: "left"
+    space_before: 6
+    space_after: 6
