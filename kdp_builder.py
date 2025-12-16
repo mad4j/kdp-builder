@@ -54,12 +54,6 @@ class MarkdownParser:
     # Pattern to match Markdown headers
     HEADER_PATTERN = re.compile(r'^(#{1,6})\s+(.+)$')
     
-    # Pattern to match bold text: **text** or __text__
-    BOLD_PATTERN = re.compile(r'\*\*([^*]+)\*\*|__([^_]+)__')
-    
-    # Pattern to match italic text: *text* or _text_
-    ITALIC_PATTERN = re.compile(r'\*([^*]+)\*|_([^_]+)_')
-    
     @staticmethod
     def parse_line(line: str) -> List[Tuple[str, str]]:
         """
@@ -113,6 +107,9 @@ class DocxBuilder:
         self.document = Document()
         self.styles = styles
         self.layout = layout
+        # Create a default style if 'normal' is not defined
+        if 'normal' not in self.styles:
+            self.styles['normal'] = StyleDefinition({})
         self._apply_layout()
     
     def _apply_layout(self):
@@ -140,9 +137,18 @@ class DocxBuilder:
         """Parse color string (hex format like '#FF0000') to RGBColor."""
         if color_str.startswith('#'):
             color_str = color_str[1:]
-        r = int(color_str[0:2], 16)
-        g = int(color_str[2:4], 16)
-        b = int(color_str[4:6], 16)
+        
+        # Validate color string format
+        if len(color_str) != 6:
+            raise ValueError(f"Invalid color format: {color_str}. Expected 6 hex characters.")
+        
+        try:
+            r = int(color_str[0:2], 16)
+            g = int(color_str[2:4], 16)
+            b = int(color_str[4:6], 16)
+        except ValueError:
+            raise ValueError(f"Invalid hex color: {color_str}. Must contain only hex digits.")
+        
         return RGBColor(r, g, b)
     
     def _apply_style_to_run(self, run, style_def: StyleDefinition):
@@ -164,7 +170,7 @@ class DocxBuilder:
         
         # Use the style of the first segment to determine paragraph style
         first_style_name = segments[0][1]
-        style_def = self.styles.get(first_style_name, self.styles.get('normal'))
+        style_def = self.styles.get(first_style_name, self.styles['normal'])
         
         paragraph = self.document.add_paragraph()
         paragraph.alignment = self._get_alignment(style_def.alignment)
@@ -176,7 +182,7 @@ class DocxBuilder:
         
         # Add each segment with its style
         for text, style_name in segments:
-            style_def = self.styles.get(style_name, self.styles.get('normal'))
+            style_def = self.styles.get(style_name, self.styles['normal'])
             run = paragraph.add_run(text)
             self._apply_style_to_run(run, style_def)
     
