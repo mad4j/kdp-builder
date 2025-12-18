@@ -14,6 +14,7 @@ KDP Builder is a Python script that converts Markdown files with custom style at
 - Support for standard Markdown headers (`#`, `##`, etc.)
 - Header and footer sections with custom styling and embedded page numbers using `{page}` and `{total}` tags
 - Page break support using `<<<pagebreak>>>` marker
+- Table of contents support using `<<<toc>>>` marker
 - Index entry support using `<<<index:term>>>` marker
 - Command-line interface for easy usage
 
@@ -82,6 +83,29 @@ Content on page 1
 
 Content on page 2
 ```
+
+#### Table of Contents
+
+To insert a table of contents, use the `<<<toc>>>` marker on its own line:
+
+```markdown
+{My Book Title}[title]
+
+<<<toc>>>
+
+<<<pagebreak>>>
+
+# Chapter 1
+
+Content for chapter 1...
+```
+
+The TOC marker creates a TOC field in the DOCX file. To generate the actual table of contents in Microsoft Word:
+1. Right-click on the TOC field
+2. Select "Update Field"
+3. Choose whether to update page numbers only or the entire table
+
+The table of contents will automatically include all headings in the document.
 
 #### Index Entries
 
