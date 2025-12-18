@@ -324,7 +324,7 @@ class DocxBuilder:
         field_code = f'XE "{escaped_term}"'
         
         # Add the field using the existing _add_field method
-        self._add_field(run, field_code)
+        DocxBuilder._add_field(run, field_code)
         
         # Make the paragraph hidden so the XE field doesn't show in the document
         # XE fields are typically hidden in Word documents
