@@ -319,7 +319,9 @@ class DocxBuilder:
         
         # Create XE field for index entry
         # Field code format: XE "term"
-        field_code = f'XE "{term}"'
+        # In Word field codes, quotes are escaped by doubling them
+        escaped_term = term.replace('"', '""')
+        field_code = f'XE "{escaped_term}"'
         
         # Add the field using the same pattern as page number fields
         fldChar1 = OxmlElement('w:fldChar')
