@@ -1,0 +1,51 @@
+name: Build Examples
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'examples/**'
+      - 'kdp_builder.py'
+      - 'requirements.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-examples:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Build example documents
+        run: |
+          python kdp_builder.py \
+            -m examples/example.md \
+            -s examples/styles.yaml \
+            -l examples/layout.yaml \
+            -o examples/output.docx
+      
+      - name: Commit and push built documents
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add examples/*.docx
+          git diff --staged --quiet || git commit -m "Auto-build: Update example documents [skip ci]"
+          git push
