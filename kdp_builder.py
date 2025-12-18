@@ -16,6 +16,7 @@ import yaml
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_BREAK
 
 
 class StyleDefinition:
@@ -53,6 +54,14 @@ class MarkdownParser:
     
     # Pattern to match Markdown headers
     HEADER_PATTERN = re.compile(r'^(#{1,6})\s+(.+)$')
+    
+    # Pattern to match page break markers
+    PAGEBREAK_PATTERN = re.compile(r'^<<<pagebreak>>>$', re.IGNORECASE)
+    
+    @staticmethod
+    def is_pagebreak(line: str) -> bool:
+        """Check if a line is a page break marker."""
+        return bool(MarkdownParser.PAGEBREAK_PATTERN.match(line.strip()))
     
     @staticmethod
     def parse_line(line: str) -> List[Tuple[str, str]]:
@@ -186,6 +195,12 @@ class DocxBuilder:
             run = paragraph.add_run(text)
             self._apply_style_to_run(run, style_def)
     
+    def add_page_break(self):
+        """Add a page break to the document."""
+        paragraph = self.document.add_paragraph()
+        run = paragraph.add_run()
+        run.add_break(WD_BREAK.PAGE)
+    
     def save(self, output_path: str):
         """Save the document to a file."""
         self.document.save(output_path)
@@ -233,7 +248,9 @@ def convert_markdown_to_docx(markdown_path: str, styles_path: str,
     with open(markdown_path, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.rstrip('\n')
-            if line.strip():  # Non-empty line
+            if MarkdownParser.is_pagebreak(line):  # Page break marker
+                builder.add_page_break()
+            elif line.strip():  # Non-empty line
                 segments = MarkdownParser.parse_line(line)
                 builder.add_paragraph(segments)
             else:  # Empty line

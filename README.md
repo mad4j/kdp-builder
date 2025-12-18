@@ -12,6 +12,7 @@ KDP Builder is a Python script that converts Markdown files with custom style at
 - YAML-based style definitions (fonts, sizes, colors, alignment, spacing)
 - YAML-based layout definitions (page size, margins)
 - Support for standard Markdown headers (`#`, `##`, etc.)
+- Page break support using `<<<pagebreak>>>` marker
 - Command-line interface for easy usage
 
 ## Installation
@@ -60,6 +61,24 @@ The Markdown file supports custom style attributes using the syntax `{text}[styl
 # Chapter 1
 
 This is normal text with {emphasized text}[emphasis] and {highlighted text}[highlight].
+
+<<<pagebreak>>>
+
+# Chapter 2
+
+Content on a new page after the page break.
+```
+
+#### Page Breaks
+
+To insert a page break, use the `<<<pagebreak>>>` marker on its own line:
+
+```markdown
+Content on page 1
+
+<<<pagebreak>>>
+
+Content on page 2
 ```
 
 ### Styles YAML Format
