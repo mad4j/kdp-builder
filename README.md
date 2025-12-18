@@ -3,19 +3,19 @@ Script for Amazon Kindle Direct Publishing (KDP) service
 
 ## Description
 
-KDP Builder is a Python script that converts Markdown files with custom style attributes into DOCX format, suitable for Amazon KDP publishing. The script uses YAML files to define styles and document layout, providing a flexible way to create professionally formatted documents.
+KDP Builder is a Python script that converts Markdown files with custom style attributes into DOCX or PDF format, suitable for Amazon KDP publishing. The script uses YAML files to define styles and document layout, providing a flexible way to create professionally formatted documents.
 
 ## Features
 
-- Convert Markdown to DOCX format
+- Convert Markdown to DOCX or PDF format
 - Custom style attributes in Markdown: `{text}[style]`
 - YAML-based style definitions (fonts, sizes, colors, alignment, spacing)
 - YAML-based layout definitions (page size, margins, headers, footers)
 - Support for standard Markdown headers (`#`, `##`, etc.)
-- Header and footer sections with custom styling and embedded page numbers using `{page}` and `{total}` tags
+- Header and footer sections with custom styling and embedded page numbers using `{page}` and `{total}` tags (DOCX only)
 - Page break support using `<<<pagebreak>>>` marker
 - Table of contents support using `<<<toc>>>` marker
-- Index entry support using `<<<index:term>>>` marker
+- Index entry support using `<<<index:term>>>` marker (DOCX only)
 - Command-line interface for easy usage
 
 ## Installation
@@ -33,23 +33,35 @@ pip install -r requirements.txt
 
 ## Usage
 
-Basic usage:
+Basic usage for DOCX:
 ```bash
 python kdp_builder.py -m input.md -s styles.yaml -l layout.yaml -o output.docx
 ```
+
+Basic usage for PDF:
+```bash
+python kdp_builder.py -m input.md -s styles.yaml -l layout.yaml -o output.pdf
+```
+
+The output format is automatically determined by the file extension (`.docx` or `.pdf`).
 
 ### Command-line Arguments
 
 - `-m`, `--markdown`: Input Markdown file (required)
 - `-s`, `--styles`: YAML file with style definitions (required)
 - `-l`, `--layout`: YAML file with layout definition (required)
-- `-o`, `--output`: Output DOCX file (required)
+- `-o`, `--output`: Output file (DOCX or PDF format based on extension) (required)
 
-### Example
+### Examples
 
-Try the included example:
+Try the included example for DOCX:
 ```bash
 python kdp_builder.py -m examples/example.md -s examples/styles.yaml -l examples/layout.yaml -o output.docx
+```
+
+Try the included example for PDF:
+```bash
+python kdp_builder.py -m examples/example.md -s examples/styles.yaml -l examples/layout.yaml -o output.pdf
 ```
 
 ## File Formats

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-KDP Builder - Markdown to DOCX Converter
+KDP Builder - Markdown to DOCX and PDF Converter
 
-This script converts Markdown files with style attributes to DOCX format,
+This script converts Markdown files with style attributes to DOCX or PDF format,
 using YAML files for style definitions and document layout.
 """
 
@@ -19,6 +19,12 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.text import WD_BREAK
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+
+from reportlab.lib.pagesizes import inch
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
+from reportlab.lib.colors import HexColor
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
 
 
 class StyleDefinition:
@@ -366,6 +372,188 @@ class DocxBuilder:
         self.document.save(output_path)
 
 
+class PdfBuilder:
+    """Builds a PDF document from parsed Markdown with styles."""
+    
+    def __init__(self, styles: Dict[str, StyleDefinition], layout: LayoutDefinition):
+        self.styles = styles
+        self.layout = layout
+        self.story = []
+        self.pdf_styles = {}
+        self.toc_entries = []
+        self.page_count = 0
+        
+        # Create a default style if 'normal' is not defined
+        if 'normal' not in self.styles:
+            self.styles['normal'] = StyleDefinition({})
+        
+        # Convert styles to ReportLab format
+        self._create_pdf_styles()
+    
+    def _create_pdf_styles(self):
+        """Convert StyleDefinition objects to ReportLab ParagraphStyle objects."""
+        for style_name, style_def in self.styles.items():
+            # Map alignment
+            alignment_map = {
+                'left': TA_LEFT,
+                'center': TA_CENTER,
+                'right': TA_RIGHT,
+                'justify': TA_JUSTIFY,
+            }
+            alignment = alignment_map.get(style_def.alignment.lower(), TA_LEFT)
+            
+            # Create ReportLab style
+            pdf_style = ParagraphStyle(
+                name=style_name,
+                fontName=self._get_font_name(style_def),
+                fontSize=style_def.font_size,
+                alignment=alignment,
+                spaceBefore=style_def.space_before,
+                spaceAfter=style_def.space_after,
+            )
+            
+            # Add color if specified
+            if style_def.color:
+                pdf_style.textColor = self._parse_color(style_def.color)
+            
+            self.pdf_styles[style_name] = pdf_style
+    
+    def _get_font_name(self, style_def: StyleDefinition) -> str:
+        """Get ReportLab font name based on style definition."""
+        # Map common font names to ReportLab built-in fonts
+        font_map = {
+            'arial': 'Helvetica',
+            'times new roman': 'Times-Roman',
+            'courier': 'Courier',
+            'georgia': 'Times-Roman',
+        }
+        
+        base_font = font_map.get(style_def.font_name.lower(), 'Helvetica')
+        
+        # Apply bold and italic modifiers
+        if style_def.bold and style_def.italic:
+            if base_font == 'Helvetica':
+                return 'Helvetica-BoldOblique'
+            elif base_font == 'Times-Roman':
+                return 'Times-BoldItalic'
+            elif base_font == 'Courier':
+                return 'Courier-BoldOblique'
+        elif style_def.bold:
+            if base_font == 'Helvetica':
+                return 'Helvetica-Bold'
+            elif base_font == 'Times-Roman':
+                return 'Times-Bold'
+            elif base_font == 'Courier':
+                return 'Courier-Bold'
+        elif style_def.italic:
+            if base_font == 'Helvetica':
+                return 'Helvetica-Oblique'
+            elif base_font == 'Times-Roman':
+                return 'Times-Italic'
+            elif base_font == 'Courier':
+                return 'Courier-Oblique'
+        
+        return base_font
+    
+    def _parse_color(self, color_str: str) -> HexColor:
+        """Parse color string (hex format like '#FF0000') to HexColor."""
+        if not color_str.startswith('#'):
+            color_str = '#' + color_str
+        return HexColor(color_str)
+    
+    def add_paragraph(self, segments: List[Tuple[str, str]]):
+        """Add a paragraph to the PDF document with styled segments."""
+        if not segments:
+            self.story.append(Spacer(1, 0.2 * inch))
+            return
+        
+        # Use the style of the first segment to determine paragraph style
+        first_style_name = segments[0][1]
+        pdf_style = self.pdf_styles.get(first_style_name, self.pdf_styles['normal'])
+        
+        # Build the paragraph text with inline styling
+        text_parts = []
+        for text, style_name in segments:
+            style_def = self.styles.get(style_name, self.styles['normal'])
+            
+            # Build inline style tags
+            style_tags = []
+            if style_def.bold:
+                text = f"<b>{text}</b>"
+            if style_def.italic:
+                text = f"<i>{text}</i>"
+            if style_def.underline:
+                text = f"<u>{text}</u>"
+            if style_def.color:
+                color = style_def.color
+                text = f'<font color="{color}">{text}</font>'
+            
+            text_parts.append(text)
+        
+        full_text = ''.join(text_parts)
+        
+        # Add as heading if it's a heading style
+        if first_style_name.startswith('heading'):
+            level = int(first_style_name[-1]) if first_style_name[-1].isdigit() else 1
+            # Extract plain text for TOC
+            plain_text = ''.join([seg[0] for seg in segments])
+            self.toc_entries.append((level, plain_text))
+        
+        paragraph = Paragraph(full_text, pdf_style)
+        self.story.append(paragraph)
+    
+    def add_page_break(self):
+        """Add a page break to the PDF document."""
+        self.story.append(PageBreak())
+    
+    def add_index_entry(self, term: str):
+        """Add an index entry marker (placeholder for PDF - not fully supported in ReportLab)."""
+        # ReportLab doesn't have native index support like DOCX
+        # This is a placeholder that could be extended with custom implementation
+        pass
+    
+    def add_toc(self):
+        """Add a table of contents placeholder to the PDF document."""
+        # Add a simple TOC using stored entries
+        toc_style = self.pdf_styles.get('heading1', self.pdf_styles['normal'])
+        toc_para = Paragraph("<b>Table of Contents</b>", toc_style)
+        self.story.append(toc_para)
+        self.story.append(Spacer(1, 0.3 * inch))
+        
+        # Add TOC entries
+        for level, title in self.toc_entries:
+            indent = (level - 1) * 0.25 * inch
+            toc_entry_text = '&nbsp;' * (level * 4) + title
+            toc_entry = Paragraph(toc_entry_text, self.pdf_styles.get('normal'))
+            self.story.append(toc_entry)
+    
+    def save(self, output_path: str):
+        """Save the PDF document to a file."""
+        # Calculate page size in points (1 inch = 72 points)
+        page_width = self.layout.page_width * inch
+        page_height = self.layout.page_height * inch
+        pagesize = (page_width, page_height)
+        
+        # Calculate margins in points
+        margin_top = self.layout.margin_top * inch
+        margin_bottom = self.layout.margin_bottom * inch
+        margin_left = self.layout.margin_left * inch
+        margin_right = self.layout.margin_right * inch
+        
+        # Create PDF document
+        doc = SimpleDocTemplate(
+            output_path,
+            pagesize=pagesize,
+            topMargin=margin_top,
+            bottomMargin=margin_bottom,
+            leftMargin=margin_left,
+            rightMargin=margin_right,
+        )
+        
+        # Build the document
+        doc.build(self.story)
+
+
 def load_styles(yaml_path: str) -> Dict[str, StyleDefinition]:
     """Load style definitions from YAML file."""
     with open(yaml_path, 'r', encoding='utf-8') as f:
@@ -431,18 +619,63 @@ def convert_markdown_to_docx(markdown_path: str, styles_path: str,
     print(f"Document saved to: {output_path}")
 
 
+def convert_markdown_to_pdf(markdown_path: str, styles_path: str, 
+                            layout_path: str, output_path: str):
+    """
+    Convert a Markdown file to PDF using style and layout definitions.
+    
+    Args:
+        markdown_path: Path to input Markdown file
+        styles_path: Path to YAML file with style definitions
+        layout_path: Path to YAML file with layout definition
+        output_path: Path to output PDF file
+    """
+    # Load configuration
+    styles = load_styles(styles_path)
+    layout = load_layout(layout_path)
+    
+    # Create document builder
+    builder = PdfBuilder(styles, layout)
+    
+    # Parse and add Markdown content
+    with open(markdown_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.rstrip('\n')
+            if MarkdownParser.is_pagebreak(line):  # Page break marker
+                builder.add_page_break()
+            elif MarkdownParser.is_toc(line):  # Table of contents marker
+                builder.add_toc()
+            else:
+                # Check for index marker
+                is_idx, term = MarkdownParser.is_index(line)
+                if is_idx:  # Index marker
+                    builder.add_index_entry(term)
+                elif line.strip():  # Non-empty line
+                    segments = MarkdownParser.parse_line(line)
+                    builder.add_paragraph(segments)
+                else:  # Empty line
+                    builder.add_paragraph([])
+    
+    # Save document
+    builder.save(output_path)
+    print(f"Document saved to: {output_path}")
+
+
 def main():
     """Main entry point for the script."""
     parser = argparse.ArgumentParser(
-        description='Convert Markdown with style attributes to DOCX format.',
+        description='Convert Markdown with style attributes to DOCX or PDF format.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Example usage:
   %(prog)s -m input.md -s styles.yaml -l layout.yaml -o output.docx
+  %(prog)s -m input.md -s styles.yaml -l layout.yaml -o output.pdf
   
 The Markdown file supports custom style attributes:
   {text}[style_name] - Apply custom style to text
   # Heading 1 - Standard Markdown heading
+  
+Output format is determined by the file extension (.docx or .pdf)
         """
     )
     
@@ -453,7 +686,7 @@ The Markdown file supports custom style attributes:
     parser.add_argument('-l', '--layout', required=True,
                        help='YAML file with layout definition')
     parser.add_argument('-o', '--output', required=True,
-                       help='Output DOCX file')
+                       help='Output file (DOCX or PDF format based on extension)')
     
     args = parser.parse_args()
     
@@ -465,9 +698,21 @@ The Markdown file supports custom style attributes:
             print(f"Error: {name} file not found: {file_path}", file=sys.stderr)
             sys.exit(1)
     
+    # Determine output format based on file extension
+    output_path = Path(args.output)
+    output_ext = output_path.suffix.lower()
+    
     try:
-        convert_markdown_to_docx(args.markdown, args.styles, 
-                                args.layout, args.output)
+        if output_ext == '.pdf':
+            convert_markdown_to_pdf(args.markdown, args.styles, 
+                                   args.layout, args.output)
+        elif output_ext == '.docx':
+            convert_markdown_to_docx(args.markdown, args.styles, 
+                                    args.layout, args.output)
+        else:
+            print(f"Error: Unsupported output format '{output_ext}'. Use .docx or .pdf", 
+                  file=sys.stderr)
+            sys.exit(1)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
