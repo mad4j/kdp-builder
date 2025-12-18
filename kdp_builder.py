@@ -400,7 +400,8 @@ class PdfBuilder:
                 'right': TA_RIGHT,
                 'justify': TA_JUSTIFY,
             }
-            alignment = alignment_map.get(style_def.alignment.lower(), TA_LEFT)
+            alignment_str = (style_def.alignment or 'left').lower()
+            alignment = alignment_map.get(alignment_str, TA_LEFT)
             
             # Create ReportLab style
             pdf_style = ParagraphStyle(
@@ -428,7 +429,8 @@ class PdfBuilder:
             'georgia': 'Times-Roman',
         }
         
-        base_font = font_map.get(style_def.font_name.lower(), 'Helvetica')
+        font_name = (style_def.font_name or 'Arial').lower()
+        base_font = font_map.get(font_name, 'Helvetica')
         
         # Apply bold and italic modifiers
         if style_def.bold and style_def.italic:
@@ -459,7 +461,11 @@ class PdfBuilder:
         """Parse color string (hex format like '#FF0000') to HexColor."""
         if not color_str.startswith('#'):
             color_str = '#' + color_str
-        return HexColor(color_str)
+        try:
+            return HexColor(color_str)
+        except (ValueError, AttributeError) as e:
+            # Return black color as fallback for invalid color strings
+            return HexColor('#000000')
     
     def add_paragraph(self, segments: List[Tuple[str, str]]):
         """Add a paragraph to the PDF document with styled segments."""
@@ -494,7 +500,11 @@ class PdfBuilder:
         
         # Add as heading if it's a heading style
         if first_style_name.startswith('heading'):
-            level = int(first_style_name[-1]) if first_style_name[-1].isdigit() else 1
+            # Extract heading level safely
+            try:
+                level = int(first_style_name.replace('heading', ''))
+            except (ValueError, IndexError):
+                level = 1
             # Extract plain text for TOC
             plain_text = ''.join([seg[0] for seg in segments])
             self.toc_entries.append((level, plain_text))
@@ -522,9 +532,14 @@ class PdfBuilder:
         
         # Add TOC entries
         for level, title in self.toc_entries:
-            indent = (level - 1) * 0.25 * inch
-            toc_entry_text = '&nbsp;' * (level * 4) + title
-            toc_entry = Paragraph(toc_entry_text, self.pdf_styles.get('normal'))
+            # Use proper indentation with left indent
+            indent_amount = (level - 1) * 20  # 20 points per level
+            toc_entry_style = ParagraphStyle(
+                name=f'toc_level_{level}',
+                parent=self.pdf_styles.get('normal'),
+                leftIndent=indent_amount
+            )
+            toc_entry = Paragraph(title, toc_entry_style)
             self.story.append(toc_entry)
     
     def save(self, output_path: str):
