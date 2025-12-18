@@ -360,16 +360,6 @@ class DocxBuilder:
         
         # Add the field using the existing _add_field method
         DocxBuilder._add_field(run, field_code)
-        
-        # Add instruction text for the user
-        instruction_para = self.document.add_paragraph()
-        instruction_run = instruction_para.add_run(
-            "Right-click here and select 'Update Field' to generate the table of contents."
-        )
-        # Make instruction text small and gray
-        instruction_run.font.size = Pt(9)
-        instruction_run.font.color.rgb = RGBColor(128, 128, 128)
-        instruction_run.font.italic = True
     
     def save(self, output_path: str):
         """Save the document to a file."""
