@@ -323,20 +323,8 @@ class DocxBuilder:
         escaped_term = term.replace('"', '""')
         field_code = f'XE "{escaped_term}"'
         
-        # Add the field using the same pattern as page number fields
-        fldChar1 = OxmlElement('w:fldChar')
-        fldChar1.set(qn('w:fldCharType'), 'begin')
-        
-        instrText = OxmlElement('w:instrText')
-        instrText.set(qn('xml:space'), 'preserve')
-        instrText.text = field_code
-        
-        fldChar2 = OxmlElement('w:fldChar')
-        fldChar2.set(qn('w:fldCharType'), 'end')
-        
-        run._r.append(fldChar1)
-        run._r.append(instrText)
-        run._r.append(fldChar2)
+        # Add the field using the existing _add_field method
+        self._add_field(run, field_code)
         
         # Make the paragraph hidden so the XE field doesn't show in the document
         # XE fields are typically hidden in Word documents
