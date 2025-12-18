@@ -64,10 +64,25 @@ class MarkdownParser:
     # Pattern to match page break markers
     PAGEBREAK_PATTERN = re.compile(r'^<<<pagebreak>>>$', re.IGNORECASE)
     
+    # Pattern to match index markers: <<<index:term>>>
+    INDEX_PATTERN = re.compile(r'^<<<index:(.+)>>>$', re.IGNORECASE)
+    
     @staticmethod
     def is_pagebreak(line: str) -> bool:
         """Check if a line is a page break marker."""
         return bool(MarkdownParser.PAGEBREAK_PATTERN.match(line.strip()))
+    
+    @staticmethod
+    def is_index(line: str) -> Tuple[bool, str]:
+        """
+        Check if a line is an index marker.
+        
+        Returns (is_index, term) where term is the index entry text.
+        """
+        match = MarkdownParser.INDEX_PATTERN.match(line.strip())
+        if match:
+            return (True, match.group(1))
+        return (False, '')
     
     @staticmethod
     def parse_line(line: str) -> List[Tuple[str, str]]:
@@ -288,6 +303,35 @@ class DocxBuilder:
         run = paragraph.add_run()
         run.add_break(WD_BREAK.PAGE)
     
+    def add_index_entry(self, term: str):
+        """
+        Add an index entry marker to the document.
+        
+        This creates an XE (Index Entry) field that marks the term for inclusion
+        in a document index. The field is hidden in the document but can be used
+        to generate an index in Word.
+        
+        Args:
+            term: The term to add to the index
+        """
+        paragraph = self.document.add_paragraph()
+        run = paragraph.add_run()
+        
+        # Create XE field for index entry
+        # Field code format: XE "term"
+        # In Word field codes, quotes are escaped by doubling them
+        escaped_term = term.replace('"', '""')
+        field_code = f'XE "{escaped_term}"'
+        
+        # Add the field using the existing _add_field method
+        DocxBuilder._add_field(run, field_code)
+        
+        # Make the paragraph hidden so the XE field doesn't show in the document
+        # XE fields are typically hidden in Word documents
+        pPr = paragraph._element.get_or_add_pPr()
+        vanish = OxmlElement('w:vanish')
+        pPr.append(vanish)
+    
     def save(self, output_path: str):
         """Save the document to a file."""
         self.document.save(output_path)
@@ -337,11 +381,16 @@ def convert_markdown_to_docx(markdown_path: str, styles_path: str,
             line = line.rstrip('\n')
             if MarkdownParser.is_pagebreak(line):  # Page break marker
                 builder.add_page_break()
-            elif line.strip():  # Non-empty line
-                segments = MarkdownParser.parse_line(line)
-                builder.add_paragraph(segments)
-            else:  # Empty line
-                builder.add_paragraph([])
+            else:
+                # Check for index marker
+                is_idx, term = MarkdownParser.is_index(line)
+                if is_idx:  # Index marker
+                    builder.add_index_entry(term)
+                elif line.strip():  # Non-empty line
+                    segments = MarkdownParser.parse_line(line)
+                    builder.add_paragraph(segments)
+                else:  # Empty line
+                    builder.add_paragraph([])
     
     # Apply header and footer after content is added
     builder._apply_header_footer()
