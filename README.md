@@ -13,6 +13,7 @@ KDP Builder is a Python script that converts Markdown files with custom style at
 - YAML-based layout definitions (page size, margins, headers, footers)
 - Support for standard Markdown headers (`#`, `##`, etc.)
 - Header and footer sections with custom styling
+- Page numbers with customizable format, position, and alignment
 - Page break support using `<<<pagebreak>>>` marker
 - Command-line interface for easy usage
 
@@ -135,6 +136,12 @@ layout:
   header_style: "subtitle"          # style to apply (from styles.yaml)
   footer_text: "© 2025 Author Name" # text to display in footer
   footer_style: "normal"            # style to apply (from styles.yaml)
+  
+  # Optional page numbers
+  page_number_format: "Page {page} of {total}"  # format string for page numbers
+  page_number_position: "footer"                # "header" or "footer"
+  page_number_alignment: "center"               # "left", "center", or "right"
+  page_number_style: "normal"                   # style to apply (from styles.yaml)
 ```
 
 Available layout properties:
@@ -148,6 +155,10 @@ Available layout properties:
 - `header_style`: Style name to apply to header text (must exist in styles.yaml)
 - `footer_text`: Optional text to display in the document footer
 - `footer_style`: Style name to apply to footer text (must exist in styles.yaml)
+- `page_number_format`: Optional format string for page numbers. Use `{page}` for current page number and `{total}` for total pages (e.g., "Page {page} of {total}", "{page}", "- {page} -")
+- `page_number_position`: Position of page numbers ("header" or "footer", default: "footer")
+- `page_number_alignment`: Alignment of page numbers ("left", "center", or "right", default: "center")
+- `page_number_style`: Style name to apply to page numbers (must exist in styles.yaml, default: "normal")
 
 ## License
 

@@ -17,6 +17,8 @@ from docx import Document
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.text import WD_BREAK
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 
 
 class StyleDefinition:
@@ -48,6 +50,10 @@ class LayoutDefinition:
         self.header_style = layout_data.get('header_style', 'normal')
         self.footer_text = layout_data.get('footer_text')
         self.footer_style = layout_data.get('footer_style', 'normal')
+        self.page_number_format = layout_data.get('page_number_format')
+        self.page_number_position = layout_data.get('page_number_position', 'footer')
+        self.page_number_alignment = layout_data.get('page_number_alignment', 'center')
+        self.page_number_style = layout_data.get('page_number_style', 'normal')
 
 
 class MarkdownParser:
@@ -125,6 +131,87 @@ class DocxBuilder:
             self.styles['normal'] = StyleDefinition({})
         self._apply_layout()
     
+    @staticmethod
+    def _add_page_number_field(run):
+        """Add page number field to a run."""
+        fldChar1 = OxmlElement('w:fldChar')
+        fldChar1.set(qn('w:fldCharType'), 'begin')
+
+        instrText = OxmlElement('w:instrText')
+        instrText.set(qn('xml:space'), 'preserve')
+        instrText.text = "PAGE"
+
+        fldChar2 = OxmlElement('w:fldChar')
+        fldChar2.set(qn('w:fldCharType'), 'end')
+
+        run._r.append(fldChar1)
+        run._r.append(instrText)
+        run._r.append(fldChar2)
+    
+    @staticmethod
+    def _add_page_count_field(run):
+        """Add total page count field to a run."""
+        fldChar1 = OxmlElement('w:fldChar')
+        fldChar1.set(qn('w:fldCharType'), 'begin')
+
+        instrText = OxmlElement('w:instrText')
+        instrText.set(qn('xml:space'), 'preserve')
+        instrText.text = "NUMPAGES"
+
+        fldChar2 = OxmlElement('w:fldChar')
+        fldChar2.set(qn('w:fldCharType'), 'end')
+
+        run._r.append(fldChar1)
+        run._r.append(instrText)
+        run._r.append(fldChar2)
+    
+    def _add_page_numbers_to_paragraph(self, paragraph, style_def: StyleDefinition):
+        """Add page numbers to a paragraph based on the configured format."""
+        page_number_format = self.layout.page_number_format
+        
+        if not page_number_format:
+            return
+        
+        # Parse the format string and add appropriate runs
+        # Supported placeholders: {page} for page number, {total} for total pages
+        parts = []
+        i = 0
+        while i < len(page_number_format):
+            if page_number_format[i:i+6] == '{page}':
+                parts.append(('page', None))
+                i += 6
+            elif page_number_format[i:i+7] == '{total}':
+                parts.append(('total', None))
+                i += 7
+            else:
+                # Find the next placeholder or end of string
+                next_page = page_number_format.find('{page}', i)
+                next_total = page_number_format.find('{total}', i)
+                
+                if next_page == -1 and next_total == -1:
+                    parts.append(('text', page_number_format[i:]))
+                    break
+                elif next_page == -1:
+                    parts.append(('text', page_number_format[i:next_total]))
+                    i = next_total
+                elif next_total == -1:
+                    parts.append(('text', page_number_format[i:next_page]))
+                    i = next_page
+                else:
+                    next_pos = min(next_page, next_total)
+                    parts.append(('text', page_number_format[i:next_pos]))
+                    i = next_pos
+        
+        # Add runs for each part
+        for part_type, part_text in parts:
+            run = paragraph.add_run(part_text if part_type == 'text' else '')
+            self._apply_style_to_run(run, style_def)
+            
+            if part_type == 'page':
+                self._add_page_number_field(run)
+            elif part_type == 'total':
+                self._add_page_count_field(run)
+    
     def _apply_layout(self):
         """Apply layout settings to the document."""
         sections = self.document.sections
@@ -155,6 +242,23 @@ class DocxBuilder:
                 run = header_para.add_run(self.layout.header_text)
                 self._apply_style_to_run(run, style_def)
             
+            # Add page numbers to header if specified
+            if self.layout.page_number_format and self.layout.page_number_position == 'header':
+                header = section.header
+                # If header already has content, create a new paragraph for page numbers
+                if self.layout.header_text:
+                    header_para = header.add_paragraph()
+                else:
+                    header_para = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+                    header_para.clear()
+                
+                # Apply style and alignment
+                style_def = self.styles.get(self.layout.page_number_style, self.styles['normal'])
+                header_para.alignment = self._get_alignment(self.layout.page_number_alignment)
+                
+                # Add page numbers
+                self._add_page_numbers_to_paragraph(header_para, style_def)
+            
             # Add footer if specified
             if self.layout.footer_text:
                 footer = section.footer
@@ -169,6 +273,23 @@ class DocxBuilder:
                 # Add text as a run and apply style
                 run = footer_para.add_run(self.layout.footer_text)
                 self._apply_style_to_run(run, style_def)
+            
+            # Add page numbers to footer if specified
+            if self.layout.page_number_format and self.layout.page_number_position == 'footer':
+                footer = section.footer
+                # If footer already has content, create a new paragraph for page numbers
+                if self.layout.footer_text:
+                    footer_para = footer.add_paragraph()
+                else:
+                    footer_para = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+                    footer_para.clear()
+                
+                # Apply style and alignment
+                style_def = self.styles.get(self.layout.page_number_style, self.styles['normal'])
+                footer_para.alignment = self._get_alignment(self.layout.page_number_alignment)
+                
+                # Add page numbers
+                self._add_page_numbers_to_paragraph(footer_para, style_def)
     
     def _get_alignment(self, alignment_str: str):
         """Convert alignment string to DOCX alignment constant."""
