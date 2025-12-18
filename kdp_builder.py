@@ -144,29 +144,31 @@ class DocxBuilder:
             if self.layout.header_text:
                 header = section.header
                 header_para = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
-                header_para.text = self.layout.header_text
+                # Clear any existing content
+                header_para.clear()
                 
                 # Apply style to header
                 style_def = self.styles.get(self.layout.header_style, self.styles['normal'])
                 header_para.alignment = self._get_alignment(style_def.alignment)
                 
-                if header_para.runs:
-                    for run in header_para.runs:
-                        self._apply_style_to_run(run, style_def)
+                # Add text as a run and apply style
+                run = header_para.add_run(self.layout.header_text)
+                self._apply_style_to_run(run, style_def)
             
             # Add footer if specified
             if self.layout.footer_text:
                 footer = section.footer
                 footer_para = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
-                footer_para.text = self.layout.footer_text
+                # Clear any existing content
+                footer_para.clear()
                 
                 # Apply style to footer
                 style_def = self.styles.get(self.layout.footer_style, self.styles['normal'])
                 footer_para.alignment = self._get_alignment(style_def.alignment)
                 
-                if footer_para.runs:
-                    for run in footer_para.runs:
-                        self._apply_style_to_run(run, style_def)
+                # Add text as a run and apply style
+                run = footer_para.add_run(self.layout.footer_text)
+                self._apply_style_to_run(run, style_def)
     
     def _get_alignment(self, alignment_str: str):
         """Convert alignment string to DOCX alignment constant."""
