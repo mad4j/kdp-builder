@@ -143,14 +143,14 @@ class DocxBuilder:
         self._apply_layout()
     
     @staticmethod
-    def _add_page_number_field(run):
-        """Add page number field to a run."""
+    def _add_field(run, field_name: str):
+        """Add a field code to a run."""
         fldChar1 = OxmlElement('w:fldChar')
         fldChar1.set(qn('w:fldCharType'), 'begin')
 
         instrText = OxmlElement('w:instrText')
         instrText.set(qn('xml:space'), 'preserve')
-        instrText.text = "PAGE"
+        instrText.text = field_name
 
         fldChar2 = OxmlElement('w:fldChar')
         fldChar2.set(qn('w:fldCharType'), 'end')
@@ -160,21 +160,14 @@ class DocxBuilder:
         run._r.append(fldChar2)
     
     @staticmethod
+    def _add_page_number_field(run):
+        """Add page number field to a run."""
+        DocxBuilder._add_field(run, "PAGE")
+    
+    @staticmethod
     def _add_page_count_field(run):
         """Add total page count field to a run."""
-        fldChar1 = OxmlElement('w:fldChar')
-        fldChar1.set(qn('w:fldCharType'), 'begin')
-
-        instrText = OxmlElement('w:instrText')
-        instrText.set(qn('xml:space'), 'preserve')
-        instrText.text = "NUMPAGES"
-
-        fldChar2 = OxmlElement('w:fldChar')
-        fldChar2.set(qn('w:fldCharType'), 'end')
-
-        run._r.append(fldChar1)
-        run._r.append(instrText)
-        run._r.append(fldChar2)
+        DocxBuilder._add_field(run, "NUMPAGES")
     
     def _add_page_numbers_to_paragraph(self, paragraph, style_def: StyleDefinition):
         """Add page numbers to a paragraph based on the configured format."""

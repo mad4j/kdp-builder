@@ -157,7 +157,7 @@ Available layout properties:
 - `footer_style`: Style name to apply to footer text (must exist in styles.yaml)
 - `page_number_format`: Optional format string for page numbers. Use `{page}` for current page number and `{total}` for total pages (e.g., "Page {page} of {total}", "{page}", "- {page} -")
 - `page_number_position`: Position of page numbers ("header" or "footer", default: "footer")
-- `page_number_alignment`: Alignment of page numbers ("left", "center", or "right", default: "center")
+- `page_number_alignment`: Alignment of page numbers ("left", "center", "right", or "justify", default: "center")
 - `page_number_style`: Style name to apply to page numbers (must exist in styles.yaml, default: "normal")
 
 ## License
