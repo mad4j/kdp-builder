@@ -22,6 +22,12 @@ Here's a paragraph with multiple styles: This is normal text, but {this part is 
 
 This chapter covers advanced topics including {key concepts}[strong] and {detailed explanations}[emphasis].
 
+<<<index:advanced topics>>>
+<<<index:key concepts>>>
+
 ## Section 2.1: Best Practices
 
 Follow these {important guidelines}[highlight] to ensure success.
+
+<<<index:best practices>>>
+<<<index:important guidelines>>>

@@ -14,6 +14,7 @@ KDP Builder is a Python script that converts Markdown files with custom style at
 - Support for standard Markdown headers (`#`, `##`, etc.)
 - Header and footer sections with custom styling and embedded page numbers using `{page}` and `{total}` tags
 - Page break support using `<<<pagebreak>>>` marker
+- Index entry support using `<<<index:term>>>` marker
 - Command-line interface for easy usage
 
 ## Installation
@@ -81,6 +82,25 @@ Content on page 1
 
 Content on page 2
 ```
+
+#### Index Entries
+
+To mark a term for the document index, use the `<<<index:term>>>` marker on its own line:
+
+```markdown
+# Chapter 1
+
+This paragraph discusses important concepts.
+
+<<<index:important concepts>>>
+
+The term "important concepts" will be marked for inclusion in the index.
+```
+
+The index markers create hidden XE (Index Entry) fields in the DOCX file. To generate the actual index in Microsoft Word:
+1. Position your cursor where you want the index to appear
+2. Go to References → Insert Index
+3. Configure your index settings and click OK
 
 ### Styles YAML Format
 
