@@ -51,8 +51,19 @@ class LayoutDefinition:
         self.footer_text = layout_data.get('footer_text')
         self.footer_style = layout_data.get('footer_style', 'normal')
         self.page_number_format = layout_data.get('page_number_format')
-        self.page_number_position = layout_data.get('page_number_position', 'footer')
-        self.page_number_alignment = layout_data.get('page_number_alignment', 'center')
+        
+        # Validate and set page number position
+        position = layout_data.get('page_number_position', 'footer')
+        if position not in ['header', 'footer']:
+            raise ValueError(f"Invalid page_number_position: '{position}'. Must be 'header' or 'footer'.")
+        self.page_number_position = position
+        
+        # Validate and set page number alignment
+        alignment = layout_data.get('page_number_alignment', 'center')
+        if alignment not in ['left', 'center', 'right', 'justify']:
+            raise ValueError(f"Invalid page_number_alignment: '{alignment}'. Must be 'left', 'center', 'right', or 'justify'.")
+        self.page_number_alignment = alignment
+        
         self.page_number_style = layout_data.get('page_number_style', 'normal')
 
 
@@ -172,44 +183,21 @@ class DocxBuilder:
         if not page_number_format:
             return
         
-        # Parse the format string and add appropriate runs
-        # Supported placeholders: {page} for page number, {total} for total pages
-        parts = []
-        i = 0
-        while i < len(page_number_format):
-            if page_number_format[i:i+6] == '{page}':
-                parts.append(('page', None))
-                i += 6
-            elif page_number_format[i:i+7] == '{total}':
-                parts.append(('total', None))
-                i += 7
-            else:
-                # Find the next placeholder or end of string
-                next_page = page_number_format.find('{page}', i)
-                next_total = page_number_format.find('{total}', i)
-                
-                if next_page == -1 and next_total == -1:
-                    parts.append(('text', page_number_format[i:]))
-                    break
-                elif next_page == -1:
-                    parts.append(('text', page_number_format[i:next_total]))
-                    i = next_total
-                elif next_total == -1:
-                    parts.append(('text', page_number_format[i:next_page]))
-                    i = next_page
-                else:
-                    next_pos = min(next_page, next_total)
-                    parts.append(('text', page_number_format[i:next_pos]))
-                    i = next_pos
+        # Split the format string into text and placeholder tokens
+        # Pattern matches {page} or {total} placeholders
+        parts = re.split(r'(\{page\}|\{total\})', page_number_format)
         
         # Add runs for each part
-        for part_type, part_text in parts:
-            run = paragraph.add_run(part_text if part_type == 'text' else '')
+        for part in parts:
+            if not part:  # Skip empty strings
+                continue
+            
+            run = paragraph.add_run(part if part not in ['{page}', '{total}'] else '')
             self._apply_style_to_run(run, style_def)
             
-            if part_type == 'page':
+            if part == '{page}':
                 self._add_page_number_field(run)
-            elif part_type == 'total':
+            elif part == '{total}':
                 self._add_page_count_field(run)
     
     def _apply_layout(self):
