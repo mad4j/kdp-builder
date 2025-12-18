@@ -67,6 +67,9 @@ class MarkdownParser:
     # Pattern to match index markers: <<<index:term>>>
     INDEX_PATTERN = re.compile(r'^<<<index:(.+)>>>$', re.IGNORECASE)
     
+    # Pattern to match table of contents markers: <<<toc>>>
+    TOC_PATTERN = re.compile(r'^<<<toc>>>$', re.IGNORECASE)
+    
     @staticmethod
     def is_pagebreak(line: str) -> bool:
         """Check if a line is a page break marker."""
@@ -83,6 +86,11 @@ class MarkdownParser:
         if match:
             return (True, match.group(1))
         return (False, '')
+    
+    @staticmethod
+    def is_toc(line: str) -> bool:
+        """Check if a line is a table of contents marker."""
+        return bool(MarkdownParser.TOC_PATTERN.match(line.strip()))
     
     @staticmethod
     def parse_line(line: str) -> List[Tuple[str, str]]:
@@ -332,6 +340,37 @@ class DocxBuilder:
         vanish = OxmlElement('w:vanish')
         pPr.append(vanish)
     
+    def add_toc(self):
+        """
+        Add a table of contents field to the document.
+        
+        This creates a TOC field that can be updated in Word to generate
+        a table of contents based on the document headings.
+        """
+        paragraph = self.document.add_paragraph()
+        run = paragraph.add_run()
+        
+        # Create TOC field
+        # Field code format: TOC \o "1-3" \h \z \u
+        # \o "1-3" = include heading levels 1-3
+        # \h = make TOC entries hyperlinks
+        # \z = hide tab leader and page numbers in Web Layout view
+        # \u = use applied paragraph outline level
+        field_code = 'TOC \\o "1-3" \\h \\z \\u'
+        
+        # Add the field using the existing _add_field method
+        DocxBuilder._add_field(run, field_code)
+        
+        # Add instruction text for the user
+        instruction_para = self.document.add_paragraph()
+        instruction_run = instruction_para.add_run(
+            "Right-click here and select 'Update Field' to generate the table of contents."
+        )
+        # Make instruction text small and gray
+        instruction_run.font.size = Pt(9)
+        instruction_run.font.color.rgb = RGBColor(128, 128, 128)
+        instruction_run.font.italic = True
+    
     def save(self, output_path: str):
         """Save the document to a file."""
         self.document.save(output_path)
@@ -381,6 +420,8 @@ def convert_markdown_to_docx(markdown_path: str, styles_path: str,
             line = line.rstrip('\n')
             if MarkdownParser.is_pagebreak(line):  # Page break marker
                 builder.add_page_break()
+            elif MarkdownParser.is_toc(line):  # Table of contents marker
+                builder.add_toc()
             else:
                 # Check for index marker
                 is_idx, term = MarkdownParser.is_index(line)

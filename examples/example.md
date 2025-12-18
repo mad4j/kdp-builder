@@ -4,6 +4,12 @@
 
 <<<pagebreak>>>
 
+{Table of Contents}[heading1]
+
+<<<toc>>>
+
+<<<pagebreak>>>
+
 # Chapter 1: Introduction
 
 This is a {normal paragraph}[normal] with some {emphasized text}[emphasis] and {strong text}[strong].
