@@ -9,3 +9,9 @@ layout:
   margin_bottom: 0.75
   margin_left: 0.75
   margin_right: 0.75
+  
+  # Header and footer (optional)
+  header_text: "My Book Title"
+  header_style: "subtitle"
+  footer_text: "© 2025 Author Name"
+  footer_style: "normal"

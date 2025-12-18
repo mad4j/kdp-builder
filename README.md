@@ -10,8 +10,9 @@ KDP Builder is a Python script that converts Markdown files with custom style at
 - Convert Markdown to DOCX format
 - Custom style attributes in Markdown: `{text}[style]`
 - YAML-based style definitions (fonts, sizes, colors, alignment, spacing)
-- YAML-based layout definitions (page size, margins)
+- YAML-based layout definitions (page size, margins, headers, footers)
 - Support for standard Markdown headers (`#`, `##`, etc.)
+- Header and footer sections with custom styling
 - Page break support using `<<<pagebreak>>>` marker
 - Command-line interface for easy usage
 
@@ -128,7 +129,25 @@ layout:
   margin_bottom: 0.75
   margin_left: 0.75
   margin_right: 0.75
+  
+  # Optional header and footer
+  header_text: "My Book Title"     # text to display in header
+  header_style: "subtitle"          # style to apply (from styles.yaml)
+  footer_text: "© 2025 Author Name" # text to display in footer
+  footer_style: "normal"            # style to apply (from styles.yaml)
 ```
+
+Available layout properties:
+- `page_width`: Page width in inches
+- `page_height`: Page height in inches
+- `margin_top`: Top margin in inches
+- `margin_bottom`: Bottom margin in inches
+- `margin_left`: Left margin in inches
+- `margin_right`: Right margin in inches
+- `header_text`: Optional text to display in the document header
+- `header_style`: Style name to apply to header text (must exist in styles.yaml)
+- `footer_text`: Optional text to display in the document footer
+- `footer_style`: Style name to apply to footer text (must exist in styles.yaml)
 
 ## License
 

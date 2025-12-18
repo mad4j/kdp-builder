@@ -44,6 +44,10 @@ class LayoutDefinition:
         self.margin_bottom = layout_data.get('margin_bottom', 1.0)
         self.margin_left = layout_data.get('margin_left', 1.0)
         self.margin_right = layout_data.get('margin_right', 1.0)
+        self.header_text = layout_data.get('header_text')
+        self.header_style = layout_data.get('header_style', 'normal')
+        self.footer_text = layout_data.get('footer_text')
+        self.footer_style = layout_data.get('footer_style', 'normal')
 
 
 class MarkdownParser:
@@ -131,6 +135,40 @@ class DocxBuilder:
             section.bottom_margin = Inches(self.layout.margin_bottom)
             section.left_margin = Inches(self.layout.margin_left)
             section.right_margin = Inches(self.layout.margin_right)
+    
+    def _apply_header_footer(self):
+        """Apply header and footer to the document."""
+        sections = self.document.sections
+        for section in sections:
+            # Add header if specified
+            if self.layout.header_text:
+                header = section.header
+                header_para = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+                # Clear any existing content
+                header_para.clear()
+                
+                # Apply style to header
+                style_def = self.styles.get(self.layout.header_style, self.styles['normal'])
+                header_para.alignment = self._get_alignment(style_def.alignment)
+                
+                # Add text as a run and apply style
+                run = header_para.add_run(self.layout.header_text)
+                self._apply_style_to_run(run, style_def)
+            
+            # Add footer if specified
+            if self.layout.footer_text:
+                footer = section.footer
+                footer_para = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+                # Clear any existing content
+                footer_para.clear()
+                
+                # Apply style to footer
+                style_def = self.styles.get(self.layout.footer_style, self.styles['normal'])
+                footer_para.alignment = self._get_alignment(style_def.alignment)
+                
+                # Add text as a run and apply style
+                run = footer_para.add_run(self.layout.footer_text)
+                self._apply_style_to_run(run, style_def)
     
     def _get_alignment(self, alignment_str: str):
         """Convert alignment string to DOCX alignment constant."""
@@ -255,6 +293,9 @@ def convert_markdown_to_docx(markdown_path: str, styles_path: str,
                 builder.add_paragraph(segments)
             else:  # Empty line
                 builder.add_paragraph([])
+    
+    # Apply header and footer after content is added
+    builder._apply_header_footer()
     
     # Save document
     builder.save(output_path)
