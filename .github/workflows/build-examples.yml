@@ -46,6 +46,10 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add examples/*.docx
-          git diff --staged --quiet || git commit -m "Auto-build: Update example documents [skip ci]"
-          git push
+          git add examples/*.docx || true
+          if ! git diff --staged --quiet; then
+            git commit -m "Auto-build: Update example documents [skip ci]"
+            git push
+          else
+            echo "No changes to commit"
+          fi
