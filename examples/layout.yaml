@@ -15,3 +15,9 @@ layout:
   header_style: "subtitle"
   footer_text: "© 2025 Author Name"
   footer_style: "normal"
+  
+  # Page numbers (optional)
+  page_number_format: "Page {page} of {total}"
+  page_number_position: "footer"
+  page_number_alignment: "center"
+  page_number_style: "normal"
