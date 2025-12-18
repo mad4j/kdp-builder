@@ -12,8 +12,7 @@ KDP Builder is a Python script that converts Markdown files with custom style at
 - YAML-based style definitions (fonts, sizes, colors, alignment, spacing)
 - YAML-based layout definitions (page size, margins, headers, footers)
 - Support for standard Markdown headers (`#`, `##`, etc.)
-- Header and footer sections with custom styling
-- Page numbers with customizable format, position, and alignment
+- Header and footer sections with custom styling and embedded page numbers using `{page}` and `{total}` tags
 - Page break support using `<<<pagebreak>>>` marker
 - Command-line interface for easy usage
 
@@ -132,16 +131,11 @@ layout:
   margin_right: 0.75
   
   # Optional header and footer
-  header_text: "My Book Title"     # text to display in header
-  header_style: "subtitle"          # style to apply (from styles.yaml)
-  footer_text: "© 2025 Author Name" # text to display in footer
-  footer_style: "normal"            # style to apply (from styles.yaml)
-  
-  # Optional page numbers
-  page_number_format: "Page {page} of {total}"  # format string for page numbers
-  page_number_position: "footer"                # "header" or "footer"
-  page_number_alignment: "center"               # "left", "center", or "right"
-  page_number_style: "normal"                   # style to apply (from styles.yaml)
+  # You can use {page} and {total} tags directly in the text
+  header_text: "My Book Title"                          # text to display in header
+  header_style: "subtitle"                              # style to apply (from styles.yaml)
+  footer_text: "© 2025 Author Name - Page {page} of {total}"  # text to display in footer
+  footer_style: "normal"                                # style to apply (from styles.yaml)
 ```
 
 Available layout properties:
@@ -151,14 +145,10 @@ Available layout properties:
 - `margin_bottom`: Bottom margin in inches
 - `margin_left`: Left margin in inches
 - `margin_right`: Right margin in inches
-- `header_text`: Optional text to display in the document header
+- `header_text`: Optional text to display in the document header. You can use `{page}` for the current page number and `{total}` for total pages (e.g., "Chapter 1 - Page {page}")
 - `header_style`: Style name to apply to header text (must exist in styles.yaml)
-- `footer_text`: Optional text to display in the document footer
+- `footer_text`: Optional text to display in the document footer. You can use `{page}` for the current page number and `{total}` for total pages (e.g., "© 2025 Author - Page {page} of {total}")
 - `footer_style`: Style name to apply to footer text (must exist in styles.yaml)
-- `page_number_format`: Optional format string for page numbers. Use `{page}` for current page number and `{total}` for total pages (e.g., "Page {page} of {total}", "{page}", "- {page} -")
-- `page_number_position`: Position of page numbers ("header" or "footer", default: "footer")
-- `page_number_alignment`: Alignment of page numbers ("left", "center", "right", or "justify", default: "center")
-- `page_number_style`: Style name to apply to page numbers (must exist in styles.yaml, default: "normal")
 
 ## License
 
