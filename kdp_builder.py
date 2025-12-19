@@ -39,17 +39,36 @@ class StyleDefinition:
 class LayoutDefinition:
     """Represents document layout from YAML."""
     
+    # Conversion factor: 1 inch = 25.4 mm
+    MM_TO_INCHES = 1.0 / 25.4
+    
     def __init__(self, layout_data: Dict[str, Any]):
-        self.page_width = layout_data.get('page_width', 8.5)
-        self.page_height = layout_data.get('page_height', 11)
-        self.margin_top = layout_data.get('margin_top', 1.0)
-        self.margin_bottom = layout_data.get('margin_bottom', 1.0)
-        self.margin_left = layout_data.get('margin_left', 1.0)
-        self.margin_right = layout_data.get('margin_right', 1.0)
+        # Get the unit for dimensions (default to inches for backward compatibility)
+        self.unit = layout_data.get('unit', 'inches').lower()
+        
+        # Validate unit
+        if self.unit not in ['inches', 'mm']:
+            raise ValueError(f"Invalid unit '{self.unit}'. Must be 'inches' or 'mm'.")
+        
+        # Get dimension values and convert to inches if necessary
+        self.page_width = self._convert_to_inches(layout_data.get('page_width', 8.5))
+        self.page_height = self._convert_to_inches(layout_data.get('page_height', 11))
+        self.margin_top = self._convert_to_inches(layout_data.get('margin_top', 1.0))
+        self.margin_bottom = self._convert_to_inches(layout_data.get('margin_bottom', 1.0))
+        self.margin_left = self._convert_to_inches(layout_data.get('margin_left', 1.0))
+        self.margin_right = self._convert_to_inches(layout_data.get('margin_right', 1.0))
         self.header_text = layout_data.get('header_text')
         self.header_style = layout_data.get('header_style', 'normal')
         self.footer_text = layout_data.get('footer_text')
         self.footer_style = layout_data.get('footer_style', 'normal')
+    
+    def _convert_to_inches(self, value: float) -> float:
+        """Convert a dimension value to inches based on the current unit."""
+        if value < 0:
+            raise ValueError(f"Dimension values must be positive, got {value}")
+        if self.unit == 'mm':
+            return value * self.MM_TO_INCHES
+        return value
 
 
 class MarkdownParser:

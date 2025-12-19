@@ -47,9 +47,13 @@ python kdp_builder.py -m input.md -s styles.yaml -l layout.yaml -o output.docx
 
 ### Example
 
-Try the included example:
+Try the included examples:
 ```bash
+# Using inches (default)
 python kdp_builder.py -m examples/example.md -s examples/styles.yaml -l examples/layout.yaml -o output.docx
+
+# Using millimeters
+python kdp_builder.py -m examples/example.md -s examples/styles.yaml -l examples/layout_mm.yaml -o output_mm.docx
 ```
 
 ## File Formats
@@ -167,9 +171,10 @@ Define document layout:
 
 ```yaml
 layout:
-  page_width: 6.0    # in inches
-  page_height: 9.0   # in inches
-  margin_top: 0.75   # in inches
+  unit: inches       # Unit for dimensions: "inches" or "mm" (default: inches)
+  page_width: 6.0    # Page width
+  page_height: 9.0   # Page height
+  margin_top: 0.75   # Top margin
   margin_bottom: 0.75
   margin_left: 0.75
   margin_right: 0.75
@@ -182,13 +187,27 @@ layout:
   footer_style: "normal"                                # style to apply (from styles.yaml)
 ```
 
+Example with millimeters:
+
+```yaml
+layout:
+  unit: mm           # All dimensions will be in millimeters
+  page_width: 152.4  # 6 inches = 152.4 mm
+  page_height: 228.6 # 9 inches = 228.6 mm
+  margin_top: 19.05  # 0.75 inches = 19.05 mm
+  margin_bottom: 19.05
+  margin_left: 19.05
+  margin_right: 19.05
+```
+
 Available layout properties:
-- `page_width`: Page width in inches
-- `page_height`: Page height in inches
-- `margin_top`: Top margin in inches
-- `margin_bottom`: Bottom margin in inches
-- `margin_left`: Left margin in inches
-- `margin_right`: Right margin in inches
+- `unit`: Unit for all dimension values - either `"inches"` or `"mm"` (default: `"inches"` for backward compatibility)
+- `page_width`: Page width in the specified unit
+- `page_height`: Page height in the specified unit
+- `margin_top`: Top margin in the specified unit
+- `margin_bottom`: Bottom margin in the specified unit
+- `margin_left`: Left margin in the specified unit
+- `margin_right`: Right margin in the specified unit
 - `header_text`: Optional text to display in the document header. You can use `{page}` for the current page number and `{total}` for total pages (e.g., "Chapter 1 - Page {page}")
 - `header_style`: Style name to apply to header text (must exist in styles.yaml)
 - `footer_text`: Optional text to display in the document footer. You can use `{page}` for the current page number and `{total}` for total pages (e.g., "© 2025 Author - Page {page} of {total}")
