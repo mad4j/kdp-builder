@@ -39,16 +39,17 @@ class StyleDefinition:
 class LayoutDefinition:
     """Represents document layout from YAML."""
     
-    # Conversion factor: 1 inch = 25.4 mm
-    MM_TO_INCHES = 1.0 / 25.4
+    # Conversion factors to inches
+    MM_TO_INCHES = 1.0 / 25.4  # 1 inch = 25.4 mm
+    CM_TO_INCHES = 1.0 / 2.54  # 1 inch = 2.54 cm
     
     def __init__(self, layout_data: Dict[str, Any]):
         # Get the unit for dimensions (default to inches for backward compatibility)
         self.unit = layout_data.get('unit', 'inches').lower()
         
         # Validate unit
-        if self.unit not in ['inches', 'mm']:
-            raise ValueError(f"Invalid unit '{self.unit}'. Must be 'inches' or 'mm'.")
+        if self.unit not in ['inches', 'mm', 'cm']:
+            raise ValueError(f"Invalid unit '{self.unit}'. Must be 'inches', 'mm', or 'cm'.")
         
         # Get dimension values and convert to inches if necessary
         self.page_width = self._convert_to_inches(layout_data.get('page_width', 8.5))
@@ -68,6 +69,8 @@ class LayoutDefinition:
             raise ValueError(f"Dimension values must be positive, got {value}")
         if self.unit == 'mm':
             return value * self.MM_TO_INCHES
+        elif self.unit == 'cm':
+            return value * self.CM_TO_INCHES
         return value
 
 

@@ -56,6 +56,9 @@ python kdp_builder.py -m examples/example.md -s examples/styles.yaml -l examples
 # Using millimeters
 python kdp_builder.py -m examples/example.md -s examples/styles.yaml -l examples/layout_mm.yaml -o output_mm.docx
 
+# Using centimeters
+python kdp_builder.py -m examples/example.md -s examples/styles.yaml -l examples/layout_cm.yaml -o output_cm.docx
+
 # Cross-link example demonstrating internal hyperlinks
 python kdp_builder.py -m examples/example_crosslinks.md -s examples/styles.yaml -l examples/layout.yaml -o output_crosslinks.docx
 ```
@@ -243,7 +246,7 @@ Define document layout:
 
 ```yaml
 layout:
-  unit: inches       # Unit for dimensions: "inches" or "mm" (default: inches)
+  unit: inches       # Unit for dimensions: "inches", "mm", or "cm" (default: inches)
   page_width: 6.0    # Page width
   page_height: 9.0   # Page height
   margin_top: 0.75   # Top margin
@@ -272,8 +275,21 @@ layout:
   margin_right: 19.05
 ```
 
+Example with centimeters:
+
+```yaml
+layout:
+  unit: cm           # All dimensions will be in centimeters
+  page_width: 15.24  # 6 inches = 15.24 cm
+  page_height: 22.86 # 9 inches = 22.86 cm
+  margin_top: 1.905  # 0.75 inches = 1.905 cm
+  margin_bottom: 1.905
+  margin_left: 1.905
+  margin_right: 1.905
+```
+
 Available layout properties:
-- `unit`: Unit for all dimension values - either `"inches"` or `"mm"` (default: `"inches"` for backward compatibility)
+- `unit`: Unit for all dimension values - either `"inches"`, `"mm"`, or `"cm"` (default: `"inches"` for backward compatibility)
 - `page_width`: Page width in the specified unit
 - `page_height`: Page height in the specified unit
 - `margin_top`: Top margin in the specified unit
