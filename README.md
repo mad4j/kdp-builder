@@ -50,11 +50,14 @@ python kdp_builder.py -m input.md -s styles.yaml -l layout.yaml -o output.docx
 
 Try the included examples:
 ```bash
-# Using inches (default)
+# Basic example using inches (default)
 python kdp_builder.py -m examples/example.md -s examples/styles.yaml -l examples/layout.yaml -o output.docx
 
 # Using millimeters
 python kdp_builder.py -m examples/example.md -s examples/styles.yaml -l examples/layout_mm.yaml -o output_mm.docx
+
+# Cross-link example demonstrating internal hyperlinks
+python kdp_builder.py -m examples/example_crosslinks.md -s examples/styles.yaml -l examples/layout.yaml -o output_crosslinks.docx
 ```
 
 ## File Formats
