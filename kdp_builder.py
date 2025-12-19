@@ -204,10 +204,17 @@ class DocxBuilder:
         self.document = Document()
         self.styles = styles
         self.layout = layout
+        # Counter for generating unique bookmark IDs
+        self._bookmark_id_counter = 0
         # Create a default style if 'normal' is not defined
         if 'normal' not in self.styles:
             self.styles['normal'] = StyleDefinition({})
         self._apply_layout()
+    
+    def _get_next_bookmark_id(self) -> str:
+        """Generate a unique bookmark ID."""
+        self._bookmark_id_counter += 1
+        return str(self._bookmark_id_counter)
     
     @staticmethod
     def _add_field(run, field_name: str):
@@ -368,7 +375,7 @@ class DocxBuilder:
         if auto_bookmark:
             # Create bookmark at the start of the paragraph
             bookmark_start = OxmlElement('w:bookmarkStart')
-            bookmark_id = str(hash(auto_bookmark) % 1000000)
+            bookmark_id = self._get_next_bookmark_id()
             bookmark_start.set(qn('w:id'), bookmark_id)
             bookmark_start.set(qn('w:name'), auto_bookmark)
             
@@ -463,9 +470,7 @@ class DocxBuilder:
         
         # Create bookmark start element
         bookmark_start = OxmlElement('w:bookmarkStart')
-        # Bookmark IDs should be unique; we'll use a simple counter approach
-        # In a real implementation, you might want to track IDs more carefully
-        bookmark_id = str(hash(name) % 1000000)
+        bookmark_id = self._get_next_bookmark_id()
         bookmark_start.set(qn('w:id'), bookmark_id)
         bookmark_start.set(qn('w:name'), name)
         
@@ -576,14 +581,22 @@ def _sanitize_bookmark_name(text: str) -> str:
     sanitized = re.sub(r'[^a-zA-Z0-9\s]', '', text)
     # Replace spaces with underscores
     sanitized = sanitized.replace(' ', '_')
+    # Remove leading/trailing underscores
+    sanitized = sanitized.strip('_')
+    
+    # Handle empty string after sanitization
+    if not sanitized:
+        return 'bookmark'
+    
     # Ensure it starts with a letter
-    if sanitized and not sanitized[0].isalpha():
+    if not sanitized[0].isalpha():
         sanitized = 'h_' + sanitized
+    
     # Limit length
     sanitized = sanitized[:40]
     # Make lowercase for consistency
     sanitized = sanitized.lower()
-    return sanitized if sanitized else 'bookmark'
+    return sanitized
 
 
 def convert_markdown_to_docx(markdown_path: str, styles_path: str, 
