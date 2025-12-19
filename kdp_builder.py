@@ -89,6 +89,12 @@ class MarkdownParser:
     # Pattern to match table of contents markers: <<<toc>>>
     TOC_PATTERN = re.compile(r'^<<<toc>>>$', re.IGNORECASE)
     
+    # Pattern to match bookmark markers: <<<bookmark:name>>>
+    BOOKMARK_PATTERN = re.compile(r'^<<<bookmark:(.+)>>>$', re.IGNORECASE)
+    
+    # Pattern to match Markdown links with internal anchors: [text](#bookmark)
+    LINK_PATTERN = re.compile(r'\[([^\]]+)\]\(#([^\)]+)\)')
+    
     @staticmethod
     def is_pagebreak(line: str) -> bool:
         """Check if a line is a page break marker."""
@@ -112,12 +118,25 @@ class MarkdownParser:
         return bool(MarkdownParser.TOC_PATTERN.match(line.strip()))
     
     @staticmethod
-    def parse_line(line: str) -> List[Tuple[str, str]]:
+    def is_bookmark(line: str) -> Tuple[bool, str]:
         """
-        Parse a line of Markdown into text segments with their styles.
+        Check if a line is a bookmark marker.
         
-        Returns a list of tuples: [(text, style_name), ...]
+        Returns (is_bookmark, name) where name is the bookmark name.
+        """
+        match = MarkdownParser.BOOKMARK_PATTERN.match(line.strip())
+        if match:
+            return (True, match.group(1))
+        return (False, '')
+    
+    @staticmethod
+    def parse_line(line: str) -> List[Tuple[str, str, str]]:
+        """
+        Parse a line of Markdown into text segments with their styles and link targets.
+        
+        Returns a list of tuples: [(text, style_name, link_target), ...]
         If no style is specified, style_name is 'normal'.
+        If no link, link_target is empty string.
         """
         segments = []
         pos = 0
@@ -128,31 +147,52 @@ class MarkdownParser:
             level = len(header_match.group(1))
             text = header_match.group(2)
             style_name = f'heading{level}'
-            return [(text, style_name)]
+            return [(text, style_name, '')]
         
-        # Process styled text and regular text
+        # Create a list of all matches (styled text and links) with their positions
+        matches = []
+        
+        # Find all styled text matches
         for match in MarkdownParser.STYLED_TEXT_PATTERN.finditer(line):
+            matches.append(('styled', match.start(), match.end(), match))
+        
+        # Find all link matches
+        for match in MarkdownParser.LINK_PATTERN.finditer(line):
+            matches.append(('link', match.start(), match.end(), match))
+        
+        # Sort matches by start position
+        matches.sort(key=lambda x: x[1])
+        
+        # Process matches in order
+        for match_type, start, end, match in matches:
             # Add any text before this match as normal text
-            if match.start() > pos:
-                normal_text = line[pos:match.start()]
+            if start > pos:
+                normal_text = line[pos:start]
                 if normal_text.strip():
-                    segments.append((normal_text, 'normal'))
+                    segments.append((normal_text, 'normal', ''))
             
-            # Add the styled text
-            text = match.group(1)
-            style = match.group(2)
-            segments.append((text, style))
-            pos = match.end()
+            if match_type == 'styled':
+                # Add the styled text
+                text = match.group(1)
+                style = match.group(2)
+                segments.append((text, style, ''))
+            elif match_type == 'link':
+                # Add the link
+                text = match.group(1)
+                target = match.group(2)
+                segments.append((text, 'normal', target))
+            
+            pos = end
         
         # Add any remaining text as normal
         if pos < len(line):
             remaining = line[pos:]
             if remaining.strip():
-                segments.append((remaining, 'normal'))
+                segments.append((remaining, 'normal', ''))
         
         # If no segments were found, treat the whole line as normal text
         if not segments and line.strip():
-            segments.append((line, 'normal'))
+            segments.append((line, 'normal', ''))
         
         return segments
 
@@ -164,10 +204,17 @@ class DocxBuilder:
         self.document = Document()
         self.styles = styles
         self.layout = layout
+        # Counter for generating unique bookmark IDs
+        self._bookmark_id_counter = 0
         # Create a default style if 'normal' is not defined
         if 'normal' not in self.styles:
             self.styles['normal'] = StyleDefinition({})
         self._apply_layout()
+    
+    def _get_next_bookmark_id(self) -> str:
+        """Generate a unique bookmark ID."""
+        self._bookmark_id_counter += 1
+        return str(self._bookmark_id_counter)
     
     @staticmethod
     def _add_field(run, field_name: str):
@@ -300,8 +347,14 @@ class DocxBuilder:
         if style_def.color:
             run.font.color.rgb = self._parse_color(style_def.color)
     
-    def add_paragraph(self, segments: List[Tuple[str, str]]):
-        """Add a paragraph to the document with styled segments."""
+    def add_paragraph(self, segments: List[Tuple[str, str, str]], auto_bookmark: str = None):
+        """
+        Add a paragraph to the document with styled segments.
+        
+        Args:
+            segments: List of (text, style_name, link_target) tuples
+            auto_bookmark: Optional bookmark name to automatically add to this paragraph
+        """
         if not segments:
             self.document.add_paragraph()
             return
@@ -318,11 +371,34 @@ class DocxBuilder:
         if style_def.space_after > 0:
             paragraph.paragraph_format.space_after = Pt(style_def.space_after)
         
+        # Add automatic bookmark if specified
+        if auto_bookmark:
+            # Create bookmark at the start of the paragraph
+            bookmark_start = OxmlElement('w:bookmarkStart')
+            bookmark_id = self._get_next_bookmark_id()
+            bookmark_start.set(qn('w:id'), bookmark_id)
+            bookmark_start.set(qn('w:name'), auto_bookmark)
+            
+            # Insert bookmark start before the first run
+            paragraph._p.insert(0, bookmark_start)
+        
         # Add each segment with its style
-        for text, style_name in segments:
+        for text, style_name, link_target in segments:
             style_def = self.styles.get(style_name, self.styles['normal'])
-            run = paragraph.add_run(text)
-            self._apply_style_to_run(run, style_def)
+            
+            if link_target:
+                # Add as hyperlink
+                self._add_hyperlink(paragraph, text, link_target, style_def)
+            else:
+                # Add as regular run
+                run = paragraph.add_run(text)
+                self._apply_style_to_run(run, style_def)
+        
+        # Add bookmark end if auto_bookmark was specified
+        if auto_bookmark:
+            bookmark_end = OxmlElement('w:bookmarkEnd')
+            bookmark_end.set(qn('w:id'), bookmark_id)
+            paragraph._p.append(bookmark_end)
     
     def add_page_break(self):
         """Add a page break to the document."""
@@ -380,6 +456,93 @@ class DocxBuilder:
         # Add the field using the existing _add_field method
         DocxBuilder._add_field(run, field_code)
     
+    def add_bookmark(self, name: str):
+        """
+        Add a bookmark to the document.
+        
+        This creates an invisible bookmark that can be the target of hyperlinks.
+        Bookmarks are used for internal cross-references within the document.
+        
+        Args:
+            name: The name of the bookmark (must be unique in the document)
+        """
+        paragraph = self.document.add_paragraph()
+        
+        # Create bookmark start element
+        bookmark_start = OxmlElement('w:bookmarkStart')
+        bookmark_id = self._get_next_bookmark_id()
+        bookmark_start.set(qn('w:id'), bookmark_id)
+        bookmark_start.set(qn('w:name'), name)
+        
+        # Create bookmark end element
+        bookmark_end = OxmlElement('w:bookmarkEnd')
+        bookmark_end.set(qn('w:id'), bookmark_id)
+        
+        # Add bookmark elements to paragraph
+        paragraph._p.append(bookmark_start)
+        paragraph._p.append(bookmark_end)
+    
+    @staticmethod
+    def _add_hyperlink(paragraph, text: str, bookmark: str, style_def: StyleDefinition):
+        """
+        Add a hyperlink to a paragraph that links to a bookmark.
+        
+        Args:
+            paragraph: The paragraph to add the hyperlink to
+            text: The visible text for the hyperlink
+            bookmark: The name of the bookmark to link to
+            style_def: Style definition to apply to the hyperlink text
+        """
+        # Create hyperlink element
+        hyperlink = OxmlElement('w:hyperlink')
+        hyperlink.set(qn('w:anchor'), bookmark)
+        
+        # Create a new run for the hyperlink
+        new_run = OxmlElement('w:r')
+        
+        # Create run properties
+        rPr = OxmlElement('w:rPr')
+        
+        # Add underline and color for hyperlink style (typical hyperlink appearance)
+        u = OxmlElement('w:u')
+        u.set(qn('w:val'), 'single')
+        rPr.append(u)
+        
+        color = OxmlElement('w:color')
+        color.set(qn('w:val'), '0563C1')  # Blue color typical for hyperlinks
+        rPr.append(color)
+        
+        # Apply font style from style_def
+        if style_def.font_name:
+            rFonts = OxmlElement('w:rFonts')
+            rFonts.set(qn('w:ascii'), style_def.font_name)
+            rFonts.set(qn('w:hAnsi'), style_def.font_name)
+            rPr.append(rFonts)
+        
+        if style_def.font_size:
+            sz = OxmlElement('w:sz')
+            sz.set(qn('w:val'), str(style_def.font_size * 2))  # Word uses half-points
+            rPr.append(sz)
+        
+        if style_def.bold:
+            b = OxmlElement('w:b')
+            rPr.append(b)
+        
+        if style_def.italic:
+            i = OxmlElement('w:i')
+            rPr.append(i)
+        
+        new_run.append(rPr)
+        
+        # Add text to run
+        t = OxmlElement('w:t')
+        t.set(qn('xml:space'), 'preserve')
+        t.text = text
+        new_run.append(t)
+        
+        hyperlink.append(new_run)
+        paragraph._p.append(hyperlink)
+    
     def save(self, output_path: str):
         """Save the document to a file."""
         self.document.save(output_path)
@@ -403,6 +566,37 @@ def load_layout(yaml_path: str) -> LayoutDefinition:
         layout_data = yaml.safe_load(f)
     
     return LayoutDefinition(layout_data.get('layout', {}))
+
+
+def _sanitize_bookmark_name(text: str) -> str:
+    """
+    Convert heading text to a valid bookmark name.
+    
+    Bookmark names in Word must:
+    - Start with a letter
+    - Contain only letters, numbers, and underscores
+    - Be no longer than 40 characters
+    """
+    # Remove any characters that aren't alphanumeric or spaces
+    sanitized = re.sub(r'[^a-zA-Z0-9\s]', '', text)
+    # Replace spaces with underscores
+    sanitized = sanitized.replace(' ', '_')
+    # Remove leading/trailing underscores
+    sanitized = sanitized.strip('_')
+    
+    # Handle empty string after sanitization
+    if not sanitized:
+        return 'bookmark'
+    
+    # Ensure it starts with a letter
+    if not sanitized[0].isalpha():
+        sanitized = 'h_' + sanitized
+    
+    # Limit length
+    sanitized = sanitized[:40]
+    # Make lowercase for consistency
+    sanitized = sanitized.lower()
+    return sanitized
 
 
 def convert_markdown_to_docx(markdown_path: str, styles_path: str, 
@@ -436,11 +630,24 @@ def convert_markdown_to_docx(markdown_path: str, styles_path: str,
                 is_idx, term = MarkdownParser.is_index(line)
                 if is_idx:  # Index marker
                     builder.add_index_entry(term)
-                elif line.strip():  # Non-empty line
-                    segments = MarkdownParser.parse_line(line)
-                    builder.add_paragraph(segments)
-                else:  # Empty line
-                    builder.add_paragraph([])
+                else:
+                    # Check for bookmark marker
+                    is_bkmk, name = MarkdownParser.is_bookmark(line)
+                    if is_bkmk:  # Bookmark marker
+                        builder.add_bookmark(name)
+                    elif line.strip():  # Non-empty line
+                        segments = MarkdownParser.parse_line(line)
+                        
+                        # Check if this is a heading and auto-create a bookmark
+                        auto_bookmark = None
+                        if segments and segments[0][1].startswith('heading'):
+                            # Create bookmark from heading text
+                            heading_text = segments[0][0]
+                            auto_bookmark = _sanitize_bookmark_name(heading_text)
+                        
+                        builder.add_paragraph(segments, auto_bookmark)
+                    else:  # Empty line
+                        builder.add_paragraph([])
     
     # Apply header and footer after content is added
     builder._apply_header_footer()
