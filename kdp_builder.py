@@ -23,7 +23,7 @@ from docx.oxml.ns import qn
 
 class StyleDefinition:
     """Represents a style definition from YAML."""
-    
+
     def __init__(self, style_data: Dict[str, Any]):
         self.font_name = style_data.get('font_name', 'Arial')
         self.font_size = style_data.get('font_size', 11)
@@ -320,12 +320,12 @@ class DocxBuilder:
             'justify': WD_ALIGN_PARAGRAPH.JUSTIFY,
         }
         return alignment_map.get(alignment_str.lower(), WD_ALIGN_PARAGRAPH.LEFT)
-    
+
     def _parse_color(self, color_str: str) -> RGBColor:
         """Parse color string (hex format like '#FF0000') to RGBColor."""
         if color_str.startswith('#'):
             color_str = color_str[1:]
-        
+  
         # Validate color string format
         if len(color_str) != 6:
             raise ValueError(f"Invalid color format: {color_str}. Expected 6 hex characters.")
