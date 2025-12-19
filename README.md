@@ -16,6 +16,7 @@ KDP Builder is a Python script that converts Markdown files with custom style at
 - Page break support using `<<<pagebreak>>>` marker
 - Table of contents support using `<<<toc>>>` marker
 - Index entry support using `<<<index:term>>>` marker
+- Cross-link support using standard Markdown link syntax `[text](#bookmark)` and `<<<bookmark:name>>>` marker
 - Command-line interface for easy usage
 
 ## Installation
@@ -129,6 +130,74 @@ The index markers create hidden XE (Index Entry) fields in the DOCX file. To gen
 1. Position your cursor where you want the index to appear
 2. Go to References → Insert Index
 3. Configure your index settings and click OK
+
+#### Cross-Links (Internal Hyperlinks)
+
+Cross-links allow you to create internal hyperlinks within your document, enabling readers to jump between sections. This is particularly useful for KDP eBooks.
+
+**Linking to Headings:**
+All headings automatically get bookmarks based on their text. You can link to any heading using standard Markdown link syntax:
+
+```markdown
+# Chapter 1: Introduction
+
+See [Chapter 2](#chapter_2_advanced_topics) for more details.
+
+# Chapter 2: Advanced Topics
+
+Content here. Go back to [Chapter 1](#chapter_1_introduction).
+```
+
+**Creating Custom Bookmarks:**
+For non-heading sections, create custom bookmarks using the `<<<bookmark:name>>>` marker:
+
+```markdown
+# Chapter 1
+
+<<<bookmark:important_section>>>
+
+## Important Information
+
+This section has a custom bookmark. 
+
+You can reference it from anywhere: [See the important section](#important_section).
+```
+
+**Features:**
+- Headings automatically generate bookmarks (e.g., "Chapter 1: Introduction" → `chapter_1_introduction`)
+- Use `[link text](#bookmark_name)` to create a hyperlink
+- Use `<<<bookmark:name>>>` to create a custom bookmark at any location
+- Hyperlinks appear blue and underlined in the generated document
+- Perfect for table of contents, cross-references, and navigation in KDP eBooks
+
+**Example with Table of Contents:**
+```markdown
+{My Book}[title]
+
+# Table of Contents
+
+- [Chapter 1: Getting Started](#chapter_1_getting_started)
+- [Chapter 2: Advanced Topics](#chapter_2_advanced_topics)
+- [Appendix](#appendix)
+
+<<<pagebreak>>>
+
+# Chapter 1: Getting Started
+
+Content here...
+
+<<<pagebreak>>>
+
+# Chapter 2: Advanced Topics
+
+See [Chapter 1](#chapter_1_getting_started) for basics.
+
+<<<pagebreak>>>
+
+# Appendix
+
+Additional information.
+```
 
 ### Styles YAML Format
 
