@@ -64,6 +64,8 @@ class LayoutDefinition:
     
     def _convert_to_inches(self, value: float) -> float:
         """Convert a dimension value to inches based on the current unit."""
+        if value < 0:
+            raise ValueError(f"Dimension values must be positive, got {value}")
         if self.unit == 'mm':
             return value * self.MM_TO_INCHES
         return value
