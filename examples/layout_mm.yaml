@@ -1,0 +1,21 @@
+# Document layout settings with millimeters
+layout:
+  # Unit specification - use mm for millimeters
+  unit: mm
+  
+  # Page dimensions in millimeters (6x9 inches paperback standard)
+  page_width: 152.4    # 6 inches
+  page_height: 228.6   # 9 inches
+  
+  # Margins in millimeters
+  margin_top: 19.05    # 0.75 inches
+  margin_bottom: 19.05
+  margin_left: 19.05
+  margin_right: 19.05
+  
+  # Header and footer (optional)
+  # You can use {page} and {total} tags directly in the text
+  header_text: "My Book Title"
+  header_style: "subtitle"
+  footer_text: "© 2025 Author Name - Page {page} of {total}"
+  footer_style: "normal"
