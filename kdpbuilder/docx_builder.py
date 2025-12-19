@@ -24,7 +24,17 @@ class DocxBuilder:
         if "normal" not in self.styles:
             self.styles["normal"] = StyleDefinition()
 
+        self._enable_update_fields_on_open()
         self._apply_layout()
+
+    def _enable_update_fields_on_open(self) -> None:
+        """Ask Word to update fields (TOC, PAGE, etc.) when opening the file."""
+        settings = self.document.settings.element
+        update_fields = settings.find(qn("w:updateFields"))
+        if update_fields is None:
+            update_fields = OxmlElement("w:updateFields")
+            settings.append(update_fields)
+        update_fields.set(qn("w:val"), "true")
 
     def _get_next_bookmark_id(self) -> str:
         self._bookmark_id_counter += 1
@@ -32,19 +42,25 @@ class DocxBuilder:
 
     @staticmethod
     def _add_field(run, field_name: str):
-        fldChar1 = OxmlElement("w:fldChar")
-        fldChar1.set(qn("w:fldCharType"), "begin")
+        fld_char_begin = OxmlElement("w:fldChar")
+        fld_char_begin.set(qn("w:fldCharType"), "begin")
+        fld_char_begin.set(qn("w:dirty"), "true")
 
-        instrText = OxmlElement("w:instrText")
-        instrText.set(qn("xml:space"), "preserve")
-        instrText.text = field_name
+        instr_text = OxmlElement("w:instrText")
+        instr_text.set(qn("xml:space"), "preserve")
+        instr_text.text = field_name
 
-        fldChar2 = OxmlElement("w:fldChar")
-        fldChar2.set(qn("w:fldCharType"), "end")
+        fld_char_sep = OxmlElement("w:fldChar")
+        fld_char_sep.set(qn("w:fldCharType"), "separate")
 
-        run._r.append(fldChar1)
-        run._r.append(instrText)
-        run._r.append(fldChar2)
+        fld_char_end = OxmlElement("w:fldChar")
+        fld_char_end.set(qn("w:fldCharType"), "end")
+
+        run._r.append(fld_char_begin)
+        run._r.append(instr_text)
+        run._r.append(fld_char_sep)
+        # Result will be populated by Word when fields are updated
+        run._r.append(fld_char_end)
 
     @staticmethod
     def _add_page_number_field(run):
@@ -149,6 +165,15 @@ class DocxBuilder:
         style_def = self.styles.get(first_style_name, self.styles["normal"])
 
         paragraph = self.document.add_paragraph()
+
+        heading_match = re.match(r"^heading(\d+)$", str(first_style_name).strip(), re.IGNORECASE)
+        if heading_match:
+            level = int(heading_match.group(1))
+            try:
+                paragraph.style = f"Heading {level}"
+            except KeyError:
+                # If the built-in heading style isn't available, keep default style.
+                pass
         paragraph.alignment = self._get_alignment(style_def.alignment)
 
         if style_def.space_before > 0:

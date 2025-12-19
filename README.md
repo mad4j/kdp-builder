@@ -61,6 +61,9 @@ python kdp_builder.py -m examples/example.md -s examples/styles.yaml -l examples
 
 # Cross-link example demonstrating internal hyperlinks
 python kdp_builder.py -m examples/example_crosslinks.md -s examples/styles.yaml -l examples/layout.yaml -o output_crosslinks.docx
+
+# TOC minimal example for verifying Table of Contents generation
+python kdp_builder.py -m examples/example_toc_minimal.md -s examples/styles.yaml -l examples/layout.yaml -o output_toc_minimal.docx
 ```
 
 ## File Formats
