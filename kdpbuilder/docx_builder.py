@@ -98,6 +98,33 @@ class DocxBuilder:
 
     def apply_header_footer(self):
         """Apply header and footer to the document (after content is added)."""
+        # Do not show header/footer on the very first page of the document.
+        # In Word this is controlled per-section; we apply it only to the first section
+        # so subsequent sections (if any) keep their normal behavior.
+        if self.document.sections and (self.layout.header_text or self.layout.footer_text):
+            first_section = self.document.sections[0]
+            first_section.different_first_page_header_footer = True
+
+            if self.layout.header_text:
+                first_page_header = first_section.first_page_header
+                first_page_header.is_linked_to_previous = False
+                header_para = (
+                    first_page_header.paragraphs[0]
+                    if first_page_header.paragraphs
+                    else first_page_header.add_paragraph()
+                )
+                header_para.clear()
+
+            if self.layout.footer_text:
+                first_page_footer = first_section.first_page_footer
+                first_page_footer.is_linked_to_previous = False
+                footer_para = (
+                    first_page_footer.paragraphs[0]
+                    if first_page_footer.paragraphs
+                    else first_page_footer.add_paragraph()
+                )
+                footer_para.clear()
+
         for section in self.document.sections:
             if self.layout.header_text:
                 header = section.header
