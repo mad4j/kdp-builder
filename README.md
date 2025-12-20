@@ -9,6 +9,7 @@ KDP Builder is a Python script that converts Markdown files with custom style at
 
 - Convert Markdown to DOCX format
 - Custom style attributes in Markdown: `{text}[style]`
+- Standard Markdown inline emphasis/strong: `*text*` / `_text_` and `**text**` / `__text__` (mapped to styles `emphasis` / `strong`)
 - YAML-based style definitions (fonts, sizes, colors, alignment, spacing)
 - YAML-based layout definitions (page size, margins, headers, footers)
 - Support for standard Markdown headers (`#`, `##`, etc.)
@@ -50,7 +51,7 @@ python -m kdpbuilder -m input.md -s styles.yaml -l layout.yaml -o output.docx
 
 Try the included example which demonstrates all features (custom styling, table of contents, cross-links, index entries, and page breaks):
 ```bash
-python -m kdpbuilder -m examples/example.md -s examples/styles.yaml -l examples/layout.yaml -o output.docx
+python -m kdpbuilder -m examples/example.md -s examples/styles.yaml -l examples/layout.yaml -o examples/output.docx
 ```
 
 Build the example from the repository root (equivalent command):
@@ -73,12 +74,24 @@ The Markdown file supports custom style attributes using the syntax `{text}[styl
 
 This is normal text with {emphasized text}[emphasis] and {highlighted text}[highlight].
 
+You can also use standard Markdown inline styles: *emphasis* and **strong**.
+
 <<<pagebreak>>>
 
 # Chapter 2
 
 Content on a new page after the page break.
 ```
+
+#### Inline Emphasis / Strong
+
+Use standard Markdown markers for inline emphasis and strong text:
+
+```markdown
+This is *emphasis* (or _emphasis_) and this is **strong** (or __strong__).
+```
+
+These markers are mapped to the `emphasis` and `strong` style names from your `styles.yaml`.
 
 #### Page Breaks
 
