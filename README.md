@@ -103,9 +103,13 @@ To insert a table of contents, use the `<<<toc>>>` marker on its own line:
 Content for chapter 1...
 ```
 
-The TOC marker creates a TOC field in the DOCX file. To generate the actual table of contents in Microsoft Word:
-1. Right-click on the TOC field
-2. Select "Update Field"
+The `<<<toc>>>` marker inserts a real Word TOC field in the DOCX file.
+
+In Microsoft Word the table of contents is generated/updated by Word (typically automatically when opening the document; the generated DOCX enables “update fields on open”).
+
+If Word does not refresh it automatically:
+1. Click inside the table of contents
+2. Right-click and select "Update Field"
 3. Choose whether to update page numbers only or the entire table
 
 The table of contents will automatically include all headings in the document.

@@ -248,9 +248,23 @@ class DocxBuilder:
 
     def add_toc(self):
         paragraph = self.document.add_paragraph()
-        run = paragraph.add_run()
-        field_code = 'TOC \\o "1-3" \\h \\z \\u'
-        DocxBuilder._add_field(run, field_code)
+
+        # Use a simple field so Word can reliably generate/update the TOC.
+        # Word will populate the TOC when fields are updated (we also enable
+        # updateFieldsOnOpen in document settings).
+        fld_simple = OxmlElement("w:fldSimple")
+        fld_simple.set(qn("w:instr"), 'TOC \\o "1-3" \\h \\z \\u')
+        fld_simple.set(qn("w:dirty"), "true")
+
+        # Placeholder run (Word will replace with the rendered TOC)
+        r = OxmlElement("w:r")
+        t = OxmlElement("w:t")
+        t.set(qn("xml:space"), "preserve")
+        t.text = ""
+        r.append(t)
+        fld_simple.append(r)
+
+        paragraph._p.append(fld_simple)
 
     def add_bookmark(self, name: str):
         paragraph = self.document.add_paragraph()

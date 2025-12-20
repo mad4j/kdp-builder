@@ -6,11 +6,6 @@
 
 {Table of Contents}[heading1]
 
-- [Chapter 1: Introduction](#chapter_1_introduction)
-- [Chapter 2: Text Styling](#chapter_2_text_styling)
-- [Chapter 3: Cross-Links and Navigation](#chapter_3_cross_links_and_navigation)
-- [Chapter 4: Conclusion](#chapter_4_conclusion)
-
 <<<toc>>>
 
 <<<pagebreak>>>
