@@ -43,5 +43,25 @@ class TestMarkdownParserInlineStyles(unittest.TestCase):
         )
 
 
+class TestMarkdownParserParseInline(unittest.TestCase):
+    def test_parse_inline_does_not_create_headings(self):
+        text = "# Not a heading"
+        segments = MarkdownParser.parse_inline(text)
+        self.assertEqual(segments, [("# Not a heading", "normal", "")])
+
+    def test_parse_inline_supports_emphasis(self):
+        text = "A *b* and **c**"
+        segments = MarkdownParser.parse_inline(text)
+        self.assertEqual(
+            segments,
+            [
+                ("A ", "normal", ""),
+                ("b", "emphasis", ""),
+                (" and ", "normal", ""),
+                ("c", "strong", ""),
+            ],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

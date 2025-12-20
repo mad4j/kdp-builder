@@ -12,7 +12,7 @@
 
 # Chapter 1: Introduction
 
-Welcome to {KDP Builder}[strong], a powerful tool for converting Markdown files to professionally formatted DOCX documents for {Amazon Kindle Direct Publishing}[emphasis].
+Welcome to **KDP Builder**, a powerful tool for converting Markdown files to professionally formatted DOCX documents for *Amazon Kindle Direct Publishing*.
 
 This example demonstrates all the key features including custom styling, table of contents, cross-links, index entries, and page breaks.
 
@@ -22,6 +22,7 @@ This example demonstrates all the key features including custom styling, table o
 ## 1.1 Getting Started
 
 To use this tool, you need three files:
+
 - A Markdown file with your content
 - A styles.yaml file defining text styles
 - A layout.yaml file defining page layout
@@ -66,6 +67,7 @@ This chapter demonstrates {internal hyperlinks}[emphasis] within the document.
 ## 3.1 Linking to Sections
 
 You can link to any heading using standard Markdown syntax:
+
 - Back to [Chapter 1](#chapter_1_introduction)
 - Jump to [Text Styling](#chapter_2_text_styling)
 - See the [Conclusion](#chapter_4_conclusion)

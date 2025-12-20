@@ -91,6 +91,7 @@ class MarkdownParser:
     @staticmethod
     def parse_line(line: str) -> List[Tuple[str, str, str]]:
         """Return [(text, style_name, link_target)]."""
+        # Full-line parsing: headers are recognized here.
         segments: List[Tuple[str, str, str]] = []
         pos = 0
 
@@ -136,5 +137,55 @@ class MarkdownParser:
                 final_segments.extend(MarkdownParser._split_inline_markdown_styles(text))
             else:
                 final_segments.append((text, style_name, link_target))
+
+        return final_segments
+
+    @staticmethod
+    def parse_inline(text: str) -> List[Tuple[str, str, str]]:
+        """Parse inline Markdown styles/links in a text chunk.
+
+        Unlike `parse_line`, this does NOT treat leading `#` as a heading.
+        Useful for parsing list item content like `- # not a heading`.
+        """
+        if text is None:
+            return []
+
+        segments: List[Tuple[str, str, str]] = []
+        pos = 0
+
+        matches = []
+        for match in MarkdownParser.STYLED_TEXT_PATTERN.finditer(text):
+            matches.append(("styled", match.start(), match.end(), match))
+        for match in MarkdownParser.LINK_PATTERN.finditer(text):
+            matches.append(("link", match.start(), match.end(), match))
+        matches.sort(key=lambda x: x[1])
+
+        for match_type, start, end, match in matches:
+            if start > pos:
+                normal_text = text[pos:start]
+                if normal_text != "":
+                    segments.append((normal_text, "normal", ""))
+
+            if match_type == "styled":
+                segments.append((match.group(1), match.group(2), ""))
+            else:
+                segments.append((match.group(1), "normal", match.group(2)))
+
+            pos = end
+
+        if pos < len(text):
+            remaining = text[pos:]
+            if remaining != "":
+                segments.append((remaining, "normal", ""))
+
+        if not segments and text != "":
+            segments.append((text, "normal", ""))
+
+        final_segments: List[Tuple[str, str, str]] = []
+        for seg_text, style_name, link_target in segments:
+            if style_name == "normal" and not link_target:
+                final_segments.extend(MarkdownParser._split_inline_markdown_styles(seg_text))
+            else:
+                final_segments.append((seg_text, style_name, link_target))
 
         return final_segments

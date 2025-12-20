@@ -183,6 +183,23 @@ class DocxBuilder:
         if style_def.color:
             run.font.color.rgb = self._parse_color(style_def.color)
 
+    def _apply_paragraph_spacing_and_alignment(self, paragraph, style_def: StyleDefinition) -> None:
+        paragraph.alignment = self._get_alignment(style_def.alignment)
+
+        if style_def.space_before > 0:
+            paragraph.paragraph_format.space_before = Pt(style_def.space_before)
+        if style_def.space_after > 0:
+            paragraph.paragraph_format.space_after = Pt(style_def.space_after)
+
+    def _add_segments_to_paragraph(self, paragraph, segments: List[Tuple[str, str, str]]) -> None:
+        for text, style_name, link_target in segments:
+            style_def = self.styles.get(style_name, self.styles["normal"])
+            if link_target:
+                self._add_hyperlink(paragraph, text, link_target, style_def)
+            else:
+                run = paragraph.add_run(text)
+                self._apply_style_to_run(run, style_def)
+
     def add_paragraph(self, segments: List[Tuple[str, str, str]], auto_bookmark: str | None = None):
         if not segments:
             self.document.add_paragraph()
@@ -201,12 +218,7 @@ class DocxBuilder:
             except KeyError:
                 # If the built-in heading style isn't available, keep default style.
                 pass
-        paragraph.alignment = self._get_alignment(style_def.alignment)
-
-        if style_def.space_before > 0:
-            paragraph.paragraph_format.space_before = Pt(style_def.space_before)
-        if style_def.space_after > 0:
-            paragraph.paragraph_format.space_after = Pt(style_def.space_after)
+        self._apply_paragraph_spacing_and_alignment(paragraph, style_def)
 
         bookmark_id = None
         if auto_bookmark:
@@ -216,18 +228,90 @@ class DocxBuilder:
             bookmark_start.set(qn("w:name"), auto_bookmark)
             paragraph._p.insert(0, bookmark_start)
 
-        for text, style_name, link_target in segments:
-            style_def = self.styles.get(style_name, self.styles["normal"])
-            if link_target:
-                self._add_hyperlink(paragraph, text, link_target, style_def)
-            else:
-                run = paragraph.add_run(text)
-                self._apply_style_to_run(run, style_def)
+        self._add_segments_to_paragraph(paragraph, segments)
 
         if auto_bookmark and bookmark_id is not None:
             bookmark_end = OxmlElement("w:bookmarkEnd")
             bookmark_end.set(qn("w:id"), bookmark_id)
             paragraph._p.append(bookmark_end)
+
+    def add_bullet_paragraph(self, segments: List[Tuple[str, str, str]], level: int = 1):
+        """Add an unordered list item as a real Word bullet paragraph.
+
+        Uses Word's built-in list styles when available (List Bullet, List Bullet 2, ...).
+        """
+        paragraph = self.document.add_paragraph()
+
+        list_level = max(1, int(level))
+        if list_level == 1:
+            list_style = "List Bullet"
+        else:
+            list_style = f"List Bullet {min(list_level, 3)}"
+
+        try:
+            paragraph.style = list_style
+        except KeyError:
+            # If the style isn't available in this document, keep default style.
+            pass
+
+        if segments:
+            first_style_name = segments[0][1]
+            style_def = self.styles.get(first_style_name, self.styles["normal"])
+        else:
+            style_def = self.styles["normal"]
+
+        # Bullet lists are typically left-aligned; still honor spacing from style config.
+        style_def_for_paragraph = StyleDefinition(
+            font_name=style_def.font_name,
+            font_size=style_def.font_size,
+            bold=style_def.bold,
+            italic=style_def.italic,
+            underline=style_def.underline,
+            color=style_def.color,
+            alignment="left",
+            space_before=style_def.space_before,
+            space_after=style_def.space_after,
+        )
+        self._apply_paragraph_spacing_and_alignment(paragraph, style_def_for_paragraph)
+        self._add_segments_to_paragraph(paragraph, segments)
+
+    def add_numbered_paragraph(self, segments: List[Tuple[str, str, str]], level: int = 1):
+        """Add an ordered list item as a real Word numbered list paragraph.
+
+        Uses Word's built-in list styles when available (List Number, List Number 2, ...).
+        """
+        paragraph = self.document.add_paragraph()
+
+        list_level = max(1, int(level))
+        if list_level == 1:
+            list_style = "List Number"
+        else:
+            list_style = f"List Number {min(list_level, 3)}"
+
+        try:
+            paragraph.style = list_style
+        except KeyError:
+            pass
+
+        if segments:
+            first_style_name = segments[0][1]
+            style_def = self.styles.get(first_style_name, self.styles["normal"])
+        else:
+            style_def = self.styles["normal"]
+
+        style_def_for_paragraph = StyleDefinition(
+            font_name=style_def.font_name,
+            font_size=style_def.font_size,
+            bold=style_def.bold,
+            italic=style_def.italic,
+            underline=style_def.underline,
+            color=style_def.color,
+            alignment="left",
+            space_before=style_def.space_before,
+            space_after=style_def.space_after,
+        )
+        self._apply_paragraph_spacing_and_alignment(paragraph, style_def_for_paragraph)
+        self._add_segments_to_paragraph(paragraph, segments)
 
     def add_page_break(self):
         paragraph = self.document.add_paragraph()
