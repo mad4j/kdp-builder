@@ -1,14 +1,26 @@
 # Document layout settings
 layout:
-  # Page dimensions in inches
-  page_width: 6.0
+  # Unit for dimensions (optional): "inches" (default), "mm", or "cm"
+  # unit: inches
+  
+  # Page dimensions (default: inches)
+  page_width: 6.0    # 6x9 inches is standard for KDP paperback
   page_height: 9.0
   
-  # Margins in inches
+  # Margins (default: inches)
   margin_top: 0.75
   margin_bottom: 0.75
   margin_left: 0.75
   margin_right: 0.75
+  
+  # To use millimeters instead, uncomment and set:
+  # unit: mm
+  # page_width: 152.4    # 6 inches = 152.4 mm
+  # page_height: 228.6   # 9 inches = 228.6 mm
+  # margin_top: 19.05    # 0.75 inches = 19.05 mm
+  # margin_bottom: 19.05
+  # margin_left: 19.05
+  # margin_right: 19.05
   
   # Header and footer (optional)
   # You can use {page} and {total} tags directly in the text

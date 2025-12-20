@@ -48,23 +48,12 @@ python -m kdpbuilder -m input.md -s styles.yaml -l layout.yaml -o output.docx
 
 ### Example
 
-Try the included examples:
+Try the included example which demonstrates all features (custom styling, table of contents, cross-links, index entries, and page breaks):
 ```bash
-# Basic example using inches (default)
 python -m kdpbuilder -m examples/example.md -s examples/styles.yaml -l examples/layout.yaml -o output.docx
-
-# Using millimeters
-python -m kdpbuilder -m examples/example.md -s examples/styles.yaml -l examples/layout_mm.yaml -o output_mm.docx
-
-# Using centimeters
-python -m kdpbuilder -m examples/example.md -s examples/styles.yaml -l examples/layout_cm.yaml -o output_cm.docx
-
-# Cross-link example demonstrating internal hyperlinks
-python -m kdpbuilder -m examples/example_crosslinks.md -s examples/styles.yaml -l examples/layout.yaml -o output_crosslinks.docx
-
-# TOC minimal example for verifying Table of Contents generation
-python -m kdpbuilder -m examples/example_toc_minimal.md -s examples/styles.yaml -l examples/layout.yaml -o output_toc_minimal.docx
 ```
+
+The layout.yaml file includes comments showing how to use different units (inches, millimeters, or centimeters) for page dimensions and margins.
 
 ## File Formats
 
