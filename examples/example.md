@@ -4,7 +4,7 @@
 
 <<<pagebreak>>>
 
-{Table of Contents}[heading1]
+# Table of Contents
 
 <<<toc>>>
 

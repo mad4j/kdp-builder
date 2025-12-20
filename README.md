@@ -53,6 +53,11 @@ Try the included example which demonstrates all features (custom styling, table 
 python -m kdpbuilder -m examples/example.md -s examples/styles.yaml -l examples/layout.yaml -o output.docx
 ```
 
+Build the example from the repository root (equivalent command):
+```bash
+python kdp_builder.py -m examples/example.md -s examples/styles.yaml -l examples/layout.yaml -o output.docx
+```
+
 The layout.yaml file includes comments showing how to use different units (inches, millimeters, or centimeters) for page dimensions and margins.
 
 ## File Formats
